@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/booking_provider.dart';
 import '../../providers/property_provider.dart';
+import '../shared/widgets/akrili_image.dart';
 
 class BookingCreateScreen extends ConsumerStatefulWidget {
   final int propertyId;
@@ -117,16 +118,11 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                 // Property Summary
                 Row(
                   children: [
-                    ClipRRect(
+                    AkriliImage(
+                      imageUrl: property.coverUrl,
+                      width: 80,
+                      height: 80,
                       borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        color: Colors.grey[200],
-                        child: property.coverUrl != null
-                            ? Image.network(property.coverUrl!, fit: BoxFit.cover)
-                            : const Icon(Icons.home_work_outlined),
-                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(

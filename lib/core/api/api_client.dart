@@ -4,6 +4,8 @@ import '../config/app_config.dart';
 import '../storage/secure_storage_service.dart';
 
 class ApiClient {
+  static String activeBaseUrl = AppConfig.defaultBaseUrl;
+
   final SecureStorageService _storage;
   late final Dio dio;
   void Function()? onUnauthorized;
@@ -13,9 +15,10 @@ class ApiClient {
     String? baseUrl,
     this.onUnauthorized,
   }) : _storage = storage {
+    activeBaseUrl = baseUrl ?? AppConfig.defaultBaseUrl;
     dio = Dio(
       BaseOptions(
-        baseUrl: baseUrl ?? AppConfig.defaultBaseUrl,
+        baseUrl: activeBaseUrl,
         connectTimeout: AppConfig.connectTimeout,
         receiveTimeout: AppConfig.receiveTimeout,
         headers: {
@@ -76,6 +79,39 @@ class ApiClient {
   }
 
   void updateBaseUrl(String newUrl) {
+    activeBaseUrl = newUrl;
     dio.options.baseUrl = newUrl;
+  }
+
+  static String? resolveUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.trim().isEmpty) return null;
+    final trimmed = rawUrl.trim();
+    final baseUri = Uri.tryParse(activeBaseUrl);
+    if (baseUri == null) return trimmed;
+
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null) return trimmed;
+
+    // Relative path (/storage/media/...)
+    if (!uri.hasScheme) {
+      return baseUri.resolve(trimmed).toString();
+    }
+
+    // Remap local/dev hosts (akrili.test, *.test, *.local, localhost, 127.0.0.1, 0.0.0.0) to active Base URL
+    final host = uri.host.toLowerCase();
+    if (host == 'akrili.test' ||
+        host.endsWith('.test') ||
+        host.endsWith('.local') ||
+        host == 'localhost' ||
+        host == '127.0.0.1' ||
+        host == '0.0.0.0') {
+      return uri.replace(
+        scheme: baseUri.scheme,
+        host: baseUri.host,
+        port: baseUri.hasPort ? baseUri.port : (uri.hasPort ? uri.port : null),
+      ).toString();
+    }
+
+    return trimmed;
   }
 }

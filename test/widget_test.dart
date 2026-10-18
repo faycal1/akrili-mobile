@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:akrili/core/api/api_client.dart';
 import 'package:akrili/data/models/user_model.dart';
 import 'package:akrili/data/models/property_model.dart';
 import 'package:akrili/data/models/booking_model.dart';
@@ -89,6 +90,60 @@ void main() {
       expect(notification.title, equals('Booking Requested'));
       expect(notification.deepLinkType, equals('booking'));
       expect(notification.deepLinkId, equals('42'));
+    });
+
+    test('ApiClient.resolveUrl correctly remaps local and .test image URLs', () {
+      // Test dev domains like akrili.test:8000
+      final resolvedAkrili = ApiClient.resolveUrl('http://akrili.test:8000/storage/media/16/image.webp');
+      expect(resolvedAkrili, equals('http://10.0.2.2:8000/storage/media/16/image.webp'));
+
+      // Test localhost:8000
+      final resolvedLocalhost = ApiClient.resolveUrl('http://localhost:8000/storage/media/16/image.webp');
+      expect(resolvedLocalhost, equals('http://10.0.2.2:8000/storage/media/16/image.webp'));
+
+      // Test 127.0.0.1:8000
+      final resolved127 = ApiClient.resolveUrl('http://127.0.0.1:8000/storage/media/16/image.webp');
+      expect(resolved127, equals('http://10.0.2.2:8000/storage/media/16/image.webp'));
+
+      // Test relative paths
+      final resolvedRelative = ApiClient.resolveUrl('/storage/media/16/image.webp');
+      expect(resolvedRelative, equals('http://10.0.2.2:8000/storage/media/16/image.webp'));
+
+      // Test external CDN URLs (preserved)
+      final externalUrl = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750';
+      expect(ApiClient.resolveUrl(externalUrl), equals(externalUrl));
+
+      // Test null or empty
+      expect(ApiClient.resolveUrl(null), isNull);
+      expect(ApiClient.resolveUrl('   '), isNull);
+    });
+
+    test('PropertyModel resolves coverUrl and gallery from akrili.test to emulator host', () {
+      final property = PropertyModel.fromJson({
+        'id': 16,
+        'title': 'Luxury Penthouse',
+        'type': 'apartment',
+        'status': 'published',
+        'nightly_price': 15000,
+        'cover_url': 'http://akrili.test:8000/storage/media/16/conversions/card.webp',
+        'gallery': [
+          'http://akrili.test:8000/storage/media/17/detail.webp',
+          '/storage/media/18/bedroom.webp',
+        ],
+      });
+
+      expect(
+        property.coverUrl,
+        equals('http://10.0.2.2:8000/storage/media/16/conversions/card.webp'),
+      );
+      expect(
+        property.gallery[0],
+        equals('http://10.0.2.2:8000/storage/media/17/detail.webp'),
+      );
+      expect(
+        property.gallery[1],
+        equals('http://10.0.2.2:8000/storage/media/18/bedroom.webp'),
+      );
     });
   });
 }

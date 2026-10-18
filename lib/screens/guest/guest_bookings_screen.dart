@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/booking_model.dart';
 import '../../providers/booking_provider.dart';
+import '../shared/widgets/akrili_image.dart';
 
 class GuestBookingsScreen extends ConsumerStatefulWidget {
   const GuestBookingsScreen({super.key});
@@ -251,20 +252,11 @@ class _BookingCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
+                  AkriliImage(
+                    imageUrl: property?.coverUrl,
+                    width: 70,
+                    height: 70,
                     borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: 70,
-                      height: 70,
-                      color: Colors.grey[200],
-                      child: property?.coverUrl != null
-                          ? Image.network(
-                              property!.coverUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.home_work_outlined),
-                            )
-                          : const Icon(Icons.home_work_outlined, color: Colors.grey),
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

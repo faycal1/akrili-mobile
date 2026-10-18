@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
 import '../../providers/favorite_provider.dart';
 import '../../providers/property_provider.dart';
+import '../shared/widgets/akrili_image.dart';
 
 class PropertyDetailScreen extends ConsumerWidget {
   final int propertyId;
@@ -95,14 +96,10 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                           PageView.builder(
                             itemCount: images.length,
                             onPageChanged: (i) => setState(() => _currentImageIndex = i),
-                            itemBuilder: (ctx, idx) => Image.network(
-                              images[idx],
+                            itemBuilder: (ctx, idx) => AkriliImage(
+                              imageUrl: images[idx],
                               fit: BoxFit.cover,
                               width: double.infinity,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.home_work_outlined, size: 64),
-                              ),
                             ),
                           ),
                           if (images.length > 1)

@@ -76,7 +76,7 @@ class ConversationRepository {
       id: json['id'] as int? ?? 0,
       otherParticipantName: otherName,
       propertyTitle: propTitle,
-      coverUrl: cover,
+      coverUrl: ApiClient.resolveUrl(cover),
       messages: messagesList,
       lastMessageAt: json['last_message_at'] != null
           ? DateTime.tryParse(json['last_message_at'].toString())

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/booking_provider.dart';
+import 'widgets/akrili_image.dart';
 
 class BookingDetailScreen extends ConsumerStatefulWidget {
   final int id;
@@ -352,20 +353,11 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ClipRRect(
+                            AkriliImage(
+                              imageUrl: property.coverUrl,
+                              width: 80,
+                              height: 80,
                               borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                width: 80,
-                                height: 80,
-                                color: Colors.grey[200],
-                                child: property.coverUrl != null
-                                    ? Image.network(
-                                        property.coverUrl!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => const Icon(Icons.home_work_outlined),
-                                      )
-                                    : const Icon(Icons.home_work_outlined, color: Colors.grey),
-                              ),
                             ),
                             const SizedBox(width: 14),
                             Expanded(

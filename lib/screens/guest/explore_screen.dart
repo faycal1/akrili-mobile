@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
 import '../../providers/favorite_provider.dart';
 import '../../providers/property_provider.dart';
+import '../shared/widgets/akrili_image.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
@@ -197,25 +198,10 @@ class _PropertyCard extends ConsumerWidget {
             // Image Stack
             Stack(
               children: [
-                Container(
+                AkriliImage(
+                  imageUrl: property.coverUrl,
                   height: 200,
                   width: double.infinity,
-                  color: Colors.grey[200],
-                  child: property.coverUrl != null
-                      ? Image.network(
-                          property.coverUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.home_work_outlined,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                        )
-                      : const Icon(
-                          Icons.home_work_outlined,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
                 ),
                 // Favorite Heart Button
                 Positioned(

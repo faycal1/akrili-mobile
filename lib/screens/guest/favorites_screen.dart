@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
 import '../../providers/favorite_provider.dart';
+import '../shared/widgets/akrili_image.dart';
 
 class FavoritesScreen extends ConsumerWidget {
   const FavoritesScreen({super.key});
@@ -136,21 +137,10 @@ class _FavoritePropertyCard extends ConsumerWidget {
             // Image Stack with heart button
             Stack(
               children: [
-                Container(
+                AkriliImage(
+                  imageUrl: property.coverUrl,
                   height: 180,
                   width: double.infinity,
-                  color: Colors.grey[200],
-                  child: property.coverUrl != null
-                      ? Image.network(
-                          property.coverUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Center(
-                            child: Icon(Icons.home_work_outlined, size: 48, color: Colors.grey),
-                          ),
-                        )
-                      : const Center(
-                          child: Icon(Icons.home_work_outlined, size: 48, color: Colors.grey),
-                        ),
                 ),
                 Positioned(
                   top: 10,

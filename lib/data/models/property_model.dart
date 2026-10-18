@@ -1,3 +1,4 @@
+import '../../core/api/api_client.dart';
 import 'user_model.dart';
 
 class WilayaModel {
@@ -167,9 +168,9 @@ class PropertyModel {
       cleaningFee: json['cleaning_fee'] as int? ?? 0,
       deposit: json['deposit'] as int? ?? 0,
       minNights: json['min_nights'] as int? ?? 1,
-      coverUrl: json['cover_url'] as String?,
+      coverUrl: ApiClient.resolveUrl(json['cover_url'] as String?),
       gallery: (json['gallery'] as List<dynamic>?)
-              ?.map((e) => e.toString())
+              ?.map((e) => ApiClient.resolveUrl(e.toString()) ?? e.toString())
               .toList() ??
           [],
       wilaya: json['wilaya'] != null && json['wilaya'] is Map<String, dynamic>
