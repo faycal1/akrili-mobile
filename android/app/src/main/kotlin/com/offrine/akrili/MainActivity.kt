@@ -1,4 +1,4 @@
-package com.example.akrili
+package com.offrine.akrili
 
 import io.flutter.embedding.android.FlutterActivity
 

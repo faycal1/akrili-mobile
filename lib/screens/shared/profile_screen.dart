@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/config/app_config.dart';
@@ -11,13 +12,14 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   void _showLanguageBottomSheet(BuildContext context, WidgetRef ref) {
+    HapticFeedback.lightImpact();
     final tr = context.tr;
     final currentLocale = ref.read(appLocaleProvider);
 
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -29,11 +31,11 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 Center(
                   child: Container(
-                    width: 40,
-                    height: 4,
+                    width: 44,
+                    height: 5,
                     decoration: BoxDecoration(
                       color: Colors.grey.withOpacity(0.35),
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                 ),
@@ -42,50 +44,53 @@ class ProfileScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     tr.selectLanguageTitle,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 12),
                 ListTile(
-                  leading: const Text('🇫🇷', style: TextStyle(fontSize: 24)),
+                  leading: const Text('🇫🇷', style: TextStyle(fontSize: 26)),
                   title: const Text('Français (Défaut)', style: TextStyle(fontWeight: FontWeight.w600)),
                   trailing: currentLocale.languageCode == 'fr'
                       ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary)
                       : null,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   selected: currentLocale.languageCode == 'fr',
                   selectedTileColor: AppTheme.primary.withOpacity(0.08),
                   onTap: () {
+                    HapticFeedback.selectionClick();
                     ref.read(appLocaleProvider.notifier).setLocale('fr');
                     Navigator.pop(ctx);
                   },
                 ),
                 const SizedBox(height: 4),
                 ListTile(
-                  leading: const Text('🇩🇿', style: TextStyle(fontSize: 24)),
+                  leading: const Text('🇩🇿', style: TextStyle(fontSize: 26)),
                   title: const Text('العربية', style: TextStyle(fontWeight: FontWeight.w600)),
                   trailing: currentLocale.languageCode == 'ar'
                       ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary)
                       : null,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   selected: currentLocale.languageCode == 'ar',
                   selectedTileColor: AppTheme.primary.withOpacity(0.08),
                   onTap: () {
+                    HapticFeedback.selectionClick();
                     ref.read(appLocaleProvider.notifier).setLocale('ar');
                     Navigator.pop(ctx);
                   },
                 ),
                 const SizedBox(height: 4),
                 ListTile(
-                  leading: const Text('🇬🇧', style: TextStyle(fontSize: 24)),
+                  leading: const Text('🇬🇧', style: TextStyle(fontSize: 26)),
                   title: const Text('English', style: TextStyle(fontWeight: FontWeight.w600)),
                   trailing: currentLocale.languageCode == 'en'
                       ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary)
                       : null,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   selected: currentLocale.languageCode == 'en',
                   selectedTileColor: AppTheme.primary.withOpacity(0.08),
                   onTap: () {
+                    HapticFeedback.selectionClick();
                     ref.read(appLocaleProvider.notifier).setLocale('en');
                     Navigator.pop(ctx);
                   },
@@ -100,6 +105,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   void _showServerSettingsDialog(BuildContext context, WidgetRef ref) {
+    HapticFeedback.lightImpact();
     final tr = context.tr;
     final client = ref.read(apiClientProvider);
     final storage = ref.read(secureStorageProvider);
@@ -108,30 +114,37 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(tr.apiBaseUrlSetting),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Row(
+          children: [
+            const Icon(Icons.cloud_sync_rounded, color: AppTheme.primary),
+            const SizedBox(width: 10),
+            Text(tr.apiBaseUrlSetting, style: const TextStyle(fontSize: 18)),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Environnements :',
+              'Environnements disponibles :',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 6,
               children: [
                 ActionChip(
                   avatar: const Icon(Icons.cloud_outlined, size: 16),
-                  label: const Text('Staging'),
+                  label: const Text('Staging (HTTPS)'),
                   onPressed: () {
                     urlController.text = AppConfig.stagingBaseUrl;
                   },
                 ),
                 ActionChip(
                   avatar: const Icon(Icons.phone_android_rounded, size: 16),
-                  label: const Text('Émulateur'),
+                  label: const Text('Émulateur 10.0.2.2'),
                   onPressed: () {
                     urlController.text = AppConfig.localEmulatorBaseUrl;
                   },
@@ -145,7 +158,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextField(
               controller: urlController,
               decoration: const InputDecoration(
@@ -162,12 +175,13 @@ class ProfileScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () async {
+              HapticFeedback.mediumImpact();
               final newUrl = urlController.text.trim();
               if (newUrl.isNotEmpty) {
                 client.updateBaseUrl(newUrl);
                 await storage.saveBaseUrl(newUrl);
               }
-              if (context.mounted) Navigator.pop(ctx);
+              if (ctx.mounted) Navigator.pop(ctx);
             },
             child: Text(tr.save),
           ),
@@ -177,12 +191,17 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    HapticFeedback.mediumImpact();
     final tr = context.tr;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(tr.confirmSignOutTitle),
-        content: Text(tr.confirmSignOutMsg),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Text(tr.signOut),
+        content: const Text(
+          'Êtes-vous sûr de vouloir vous déconnecter de votre compte Akrili ?',
+          style: TextStyle(fontSize: 14),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -190,7 +209,10 @@ class ProfileScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondary),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondary,
+              foregroundColor: Colors.white,
+            ),
             child: Text(tr.signOut),
           ),
         ],
@@ -221,6 +243,7 @@ class ProfileScreen extends ConsumerWidget {
     final activeRole = ref.watch(activeRoleModeProvider);
     final appLocale = ref.watch(appLocaleProvider);
     final tr = context.tr;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -234,7 +257,9 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
       body: authState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppTheme.primary),
+        ),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (user) {
           if (user == null) {
@@ -245,22 +270,27 @@ class ProfileScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primary.withOpacity(0.12),
+                      width: 90,
+                      height: 90,
+                      decoration: const BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
                         shape: BoxShape.circle,
+                        boxShadow: AppTheme.primaryButtonShadow,
                       ),
                       child: const Icon(
-                        Icons.person_outline_rounded,
-                        size: 44,
-                        color: AppTheme.primary,
+                        Icons.person_rounded,
+                        size: 48,
+                        color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                     Text(
                       tr.welcomeToAkrili,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -268,15 +298,15 @@ class ProfileScreen extends ConsumerWidget {
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.grey, fontSize: 14),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () => context.push('/login'),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: Text(
@@ -291,9 +321,9 @@ class ProfileScreen extends ConsumerWidget {
                       child: OutlinedButton(
                         onPressed: () => context.push('/register'),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: Text(
@@ -303,23 +333,47 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    Card(
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
+                        ),
+                        boxShadow: AppTheme.cardShadow,
+                      ),
                       child: Column(
                         children: [
                           ListTile(
-                            leading: const Icon(Icons.language_rounded, color: AppTheme.primary),
-                            title: Text(tr.languageSetting),
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.language_rounded, color: AppTheme.primary, size: 20),
+                            ),
+                            title: Text(tr.languageSetting, style: const TextStyle(fontWeight: FontWeight.w600)),
                             subtitle: Text(_getLocaleDisplayName(appLocale.languageCode)),
                             trailing: const Icon(Icons.chevron_right_rounded),
                             onTap: () => _showLanguageBottomSheet(context, ref),
                           ),
                           const Divider(height: 1),
                           ListTile(
-                            leading: const Icon(Icons.tune_rounded, color: AppTheme.primary),
-                            title: Text(tr.apiBaseUrlSetting),
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.tune_rounded, color: AppTheme.primary, size: 20),
+                            ),
+                            title: Text(tr.apiBaseUrlSetting, style: const TextStyle(fontWeight: FontWeight.w600)),
                             subtitle: Text(
                               ref.watch(apiClientProvider).dio.options.baseUrl,
                               style: const TextStyle(fontSize: 11, color: Colors.grey),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             trailing: const Icon(Icons.chevron_right_rounded),
                             onTap: () => _showServerSettingsDialog(context, ref),
@@ -336,29 +390,37 @@ class ProfileScreen extends ConsumerWidget {
           final isHostMode = activeRole == 'host';
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // User Card
+                // Radiant Gradient User Profile Card
                 Container(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    gradient: AppTheme.primaryGradient,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: AppTheme.primaryButtonShadow,
                   ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: AppTheme.primary.withOpacity(0.15),
-                        child: Text(
-                          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withOpacity(0.8), width: 2),
+                        ),
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.white,
+                          child: Text(
+                            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primary,
+                            ),
                           ),
                         ),
                       ),
@@ -375,25 +437,29 @@ class ProfileScreen extends ConsumerWidget {
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
+                                      color: Colors.white,
+                                      letterSpacing: -0.3,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                if (user.isVerified)
-                                  const Icon(Icons.verified_rounded, size: 18, color: AppTheme.primary),
+                                if (user.isVerified) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.verified_rounded, size: 18, color: Colors.white),
+                                ],
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 3),
                             if (user.email != null)
                               Text(
                                 user.email!,
-                                style: const TextStyle(color: Colors.grey, fontSize: 13),
-                              ),
-                            if (user.phone != null)
-                              Text(
-                                user.phone!,
-                                style: const TextStyle(color: Colors.grey, fontSize: 13),
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.85),
+                                  fontSize: 12.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             const SizedBox(height: 8),
                             Wrap(
@@ -407,17 +473,18 @@ class ProfileScreen extends ConsumerWidget {
                                             ? tr.adminBadge
                                             : r.toUpperCase();
                                 return Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primary.withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white30),
                                   ),
                                   child: Text(
                                     label,
                                     style: const TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 10.5,
                                       fontWeight: FontWeight.bold,
-                                      color: AppTheme.primary,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 );
@@ -431,27 +498,36 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Mode Switcher (Guest / Host)
+                // Fluid Mode Switcher (Guest / Host)
                 if (user.isHost) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isHostMode
-                          ? AppTheme.primary.withOpacity(0.08)
-                          : Colors.grey.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(16),
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isHostMode
-                            ? AppTheme.primary.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.2),
+                            ? AppTheme.primary.withOpacity(0.5)
+                            : (isDark ? Colors.white12 : Colors.black.withOpacity(0.06)),
+                        width: isHostMode ? 1.5 : 1,
                       ),
+                      boxShadow: AppTheme.cardShadow,
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          isHostMode ? Icons.storefront_rounded : Icons.explore_outlined,
-                          color: isHostMode ? AppTheme.primary : Colors.grey[700],
-                          size: 28,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isHostMode
+                                ? AppTheme.primary.withOpacity(0.12)
+                                : Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            isHostMode ? Icons.storefront_rounded : Icons.explore_rounded,
+                            color: isHostMode ? AppTheme.primary : Colors.grey[700],
+                            size: 26,
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -469,9 +545,12 @@ class ProfileScreen extends ConsumerWidget {
                               const SizedBox(height: 2),
                               Text(
                                 isHostMode
-                                    ? 'Gestion de vos annonces et réservations reçues'
-                                    : 'Explorer et réserver des séjours en Algérie',
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    ? 'Gérer vos annonces et réservations'
+                                    : 'Découvrir des séjours en Algérie',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                ),
                               ),
                             ],
                           ),
@@ -480,6 +559,7 @@ class ProfileScreen extends ConsumerWidget {
                           value: isHostMode,
                           activeColor: AppTheme.primary,
                           onChanged: (val) {
+                            HapticFeedback.mediumImpact();
                             final newMode = val ? 'host' : 'guest';
                             ref.read(authNotifierProvider.notifier).switchRoleMode(newMode);
                             if (newMode == 'host') {
@@ -495,35 +575,66 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                 ],
 
-                // Profile Menu Options
-                Card(
+                // Settings Group 1: Preferences & System
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
+                    ),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
                   child: Column(
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.language_rounded, color: AppTheme.primary),
-                        title: Text(tr.languageSetting),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.language_rounded, color: AppTheme.primary, size: 20),
+                        ),
+                        title: Text(tr.languageSetting, style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(_getLocaleDisplayName(appLocale.languageCode)),
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => _showLanguageBottomSheet(context, ref),
                       ),
                       const Divider(height: 1),
                       ListTile(
-                        leading: const Icon(Icons.tune_rounded, color: AppTheme.primary),
-                        title: Text(tr.apiBaseUrlSetting),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.tune_rounded, color: AppTheme.primary, size: 20),
+                        ),
+                        title: Text(tr.apiBaseUrlSetting, style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(
                           ref.watch(apiClientProvider).dio.options.baseUrl,
                           style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => _showServerSettingsDialog(context, ref),
                       ),
                       const Divider(height: 1),
                       ListTile(
-                        leading: const Icon(Icons.privacy_tip_outlined, color: AppTheme.primary),
-                        title: const Text('Confidentialité & Notifications'),
-                        subtitle: const Text('Notifications push actives pour cet appareil'),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.notifications_active_outlined, color: AppTheme.primary, size: 20),
+                        ),
+                        title: const Text('Notifications', style: TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: const Text('Alertes de réservation et messages'),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () {},
+                        onTap: () => context.push('/notifications'),
                       ),
                     ],
                   ),
@@ -537,19 +648,28 @@ class ProfileScreen extends ConsumerWidget {
                     foregroundColor: AppTheme.secondary,
                     side: const BorderSide(color: AppTheme.secondary),
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   icon: const Icon(Icons.logout_rounded),
-                  label: Text(tr.signOut),
+                  label: Text(
+                    tr.signOut,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
                 ),
                 const SizedBox(height: 20),
 
-                // App version note
-                const Center(
+                // App version & branding footer
+                Center(
                   child: Text(
-                    'Akrili Mobile v1.0.0 (Phase 4)\nLocations de courte durée en Algérie',
+                    'Akrili Mobile v1.0.0\nPlateforme de locations de courte durée en Algérie 🇩🇿',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: isDark ? Colors.grey[500] : Colors.grey[500],
+                      height: 1.4,
+                    ),
                   ),
                 ),
               ],

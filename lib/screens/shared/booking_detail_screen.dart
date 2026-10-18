@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -37,7 +38,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       case 'cancelled':
         return AppTheme.secondary;
       case 'completed':
-        return const Color(0xFF6B7280);
+        return const Color(0xFF6366F1);
       default:
         return Colors.blueGrey;
     }
@@ -53,7 +54,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       case 'cancelled':
         return Icons.cancel_rounded;
       case 'completed':
-        return Icons.task_alt_rounded;
+        return Icons.verified_rounded;
       default:
         return Icons.info_outline_rounded;
     }
@@ -78,11 +79,16 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
   Future<void> _handleAccept() async {
     final tr = context.tr;
+    HapticFeedback.mediumImpact();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: Text(tr.acceptBtn),
-        content: const Text('Confirmer cette réservation ? Le voyageur en sera immédiatement informé.'),
+        content: const Text(
+          'Confirmer cette réservation ? Le voyageur en sera immédiatement informé par notification.',
+          style: TextStyle(fontSize: 14),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -90,7 +96,10 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+            ),
             child: Text(tr.acceptBtn),
           ),
         ],
@@ -124,10 +133,12 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
   Future<void> _handleReject() async {
     final tr = context.tr;
+    HapticFeedback.mediumImpact();
     final reasonController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Text('Refuser la réservation ?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -142,7 +153,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
               controller: reasonController,
               decoration: const InputDecoration(
                 labelText: 'Motif',
-                hintText: 'ex. Dates indisponibles',
+                hintText: 'ex. Logement en travaux ou dates indisponibles',
               ),
               maxLines: 2,
             ),
@@ -155,7 +166,10 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondary),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondary,
+              foregroundColor: Colors.white,
+            ),
             child: Text(tr.rejectBtn),
           ),
         ],
@@ -188,15 +202,15 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   }
 
   Future<void> _handleSubmitReview() async {
-    final tr = context.tr;
     final comment = _reviewController.text.trim();
     if (comment.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez laisser un court commentaire sur votre séjour.')),
+        const SnackBar(content: Text('Veuillez rédiger un commentaire pour votre avis.')),
       );
       return;
     }
 
+    HapticFeedback.mediumImpact();
     setState(() => _isSubmittingReview = true);
     try {
       final repo = ref.read(bookingRepositoryProvider);
@@ -208,13 +222,14 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       ref.invalidate(bookingDetailProvider(widget.id));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr.reviewSubmittedSuccess)),
+          const SnackBar(content: Text('Merci ! Votre avis a été publié avec succès.')),
         );
+        _reviewController.clear();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}')),
+          SnackBar(content: Text('Erreur lors de la publication : $e')),
         );
       }
     } finally {
@@ -222,10 +237,20 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     }
   }
 
+  String _formatDisplayDate(String rawDate) {
+    try {
+      final dt = DateTime.parse(rawDate);
+      return DateFormat('EEEE dd MMMM yyyy', 'fr').format(dt);
+    } catch (_) {
+      return rawDate;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
     final bookingAsync = ref.watch(bookingDetailProvider(widget.id));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -239,26 +264,43 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         ],
       ),
       body: bookingAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppTheme.primary),
+        ),
         error: (err, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.secondary),
-                const SizedBox(height: 12),
-                Text('Impossible de charger la réservation', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.error_outline_rounded,
+                    size: 44,
+                    color: AppTheme.secondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Impossible de charger la réservation',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 6),
                 Text(
                   err.toString().replaceFirst('Exception: ', ''),
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
                 const SizedBox(height: 16),
-                OutlinedButton(
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
                   onPressed: () => ref.refresh(bookingDetailProvider(widget.id)),
-                  child: Text(tr.retry),
+                  label: Text(tr.retry),
                 ),
               ],
             ),
@@ -278,21 +320,29 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Status Banner
+                // Modern Status Banner
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: statusColor.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
-                      Icon(_statusIcon(booking.status), color: statusColor, size: 28),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(_statusIcon(booking.status), color: statusColor, size: 24),
+                      ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(
@@ -302,9 +352,9 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                               _statusLocalized(booking.status, tr).toUpperCase(),
                               style: TextStyle(
                                 color: statusColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                letterSpacing: 0.5,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                                letterSpacing: 0.6,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -314,9 +364,12 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                                   : booking.isConfirmed
                                       ? 'Réservation confirmée et active'
                                       : booking.isRejected
-                                          ? 'Réservation refusée'
+                                          ? 'Demande de séjour refusée'
                                           : 'Réservation ${_statusLocalized(booking.status, tr)}',
-                              style: const TextStyle(fontSize: 12, color: Colors.black87),
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: isDark ? Colors.grey[300] : Colors.black87,
+                              ),
                             ),
                           ],
                         ),
@@ -326,13 +379,16 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Booking Reference & Created Date
+                // Booking Reference & Booked Date
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
+                    ),
+                    boxShadow: AppTheme.cardShadow,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -340,11 +396,14 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(tr.referenceLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 2),
+                          Text(
+                            tr.referenceLabel,
+                            style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
                           Text(
                             booking.reference.isNotEmpty ? booking.reference : '#${booking.id}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
                           ),
                         ],
                       ),
@@ -352,11 +411,14 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text(tr.bookedOnLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 2),
+                            Text(
+                              tr.bookedOnLabel,
+                              style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
                             Text(
                               DateFormat('dd/MM/yyyy').format(booking.createdAt!),
-                              style: const TextStyle(fontSize: 13),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -367,50 +429,84 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
                 // Property Card
                 if (property != null) ...[
-                  Card(
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
+                      ),
+                      boxShadow: AppTheme.cardShadow,
+                    ),
                     clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () => context.push('/properties/${property.id}'),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AkriliImage(
-                              imageUrl: property.coverUrl,
-                              width: 80,
-                              height: 80,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    property.title,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${property.commune?.name ?? ""}, ${property.wilaya?.name ?? ""}',
-                                    style: const TextStyle(color: Colors.grey, fontSize: 13),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${tr.viewListingBtn} ›',
-                                    style: const TextStyle(
-                                      color: AppTheme.primary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => context.push('/properties/${property.id}'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AkriliImage(
+                                imageUrl: property.coverUrl,
+                                width: 84,
+                                height: 84,
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      property.title,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        letterSpacing: -0.3,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.location_on_outlined, size: 14, color: AppTheme.primary),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            '${property.commune?.name ?? ""}, ${property.wilaya?.name ?? "Algérie"}',
+                                            style: TextStyle(
+                                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                              fontSize: 12.5,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          tr.viewListingBtn,
+                                          style: const TextStyle(
+                                            color: AppTheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12.5,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Icon(Icons.arrow_forward_rounded, size: 14, color: AppTheme.primary),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -418,94 +514,116 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                   const SizedBox(height: 16),
                 ],
 
-                // Reservation Details
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(tr.reservationDetails, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(tr.checkInLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text(booking.checkIn, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(tr.checkOutLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text(booking.checkOut, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        const Divider(height: 1),
-                        const SizedBox(height: 14),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(tr.durationLabel, style: const TextStyle(color: Colors.grey)),
-                            Text('$nights ${tr.nightsUnit}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(tr.minGuestsLabel, style: const TextStyle(color: Colors.grey)),
-                            Text('${booking.guests} ${tr.guestsUnit}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                        if (booking.tenant != null) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(tr.tenantField, style: const TextStyle(color: Colors.grey)),
-                              Text(booking.tenant!.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                            ],
+                // Dates Timeline & Stay Details
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
+                    ),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_month_rounded, color: AppTheme.primary, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            tr.reservationDetails,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                         ],
+                      ),
+                      const Divider(height: 22),
+                      _detailRow(
+                        context,
+                        tr.checkInLabel,
+                        _formatDisplayDate(booking.checkIn),
+                        Icons.login_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _detailRow(
+                        context,
+                        tr.checkOutLabel,
+                        _formatDisplayDate(booking.checkOut),
+                        Icons.logout_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _detailRow(
+                        context,
+                        tr.durationLabel,
+                        '$nights ${tr.nightsUnit}',
+                        Icons.nights_stay_outlined,
+                      ),
+                      const SizedBox(height: 12),
+                      _detailRow(
+                        context,
+                        tr.minGuestsLabel,
+                        '${booking.guests} ${tr.guestsUnit}',
+                        Icons.group_outlined,
+                      ),
+                      if (booking.tenant != null) ...[
+                        const SizedBox(height: 12),
+                        _detailRow(
+                          context,
+                          tr.tenantField,
+                          booking.tenant!.name,
+                          Icons.person_outline_rounded,
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Price Breakdown
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(tr.priceSummary, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(tr.totalLabel, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            Text(
-                              '${NumberFormat("#,###").format(booking.totalPrice)} DZD',
-                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.primary),
-                            ),
-                          ],
-                        ),
-                      ],
+                // Total Price Breakdown Card
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
                     ),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.receipt_long_rounded, color: AppTheme.primary, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            tr.priceSummary,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 22),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            tr.totalLabel,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '${NumberFormat("#,###").format(booking.totalPrice)} DZD',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.primary,
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -513,10 +631,10 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 // Host Decision Actions if canDecide
                 if (booking.canDecide && booking.isPending) ...[
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       color: Colors.amber.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: Colors.amber.withOpacity(0.4)),
                     ),
                     child: Column(
@@ -526,17 +644,22 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                           children: [
                             Icon(Icons.gavel_rounded, color: Colors.amber, size: 22),
                             SizedBox(width: 8),
-                            Text('Décision requise de l\'hôte', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text(
+                              'Décision requise de l\'hôte',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Examinez cette réservation et acceptez ou refusez la demande du voyageur.',
-                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                          'Examinez cette réservation et confirmez ou refusez la demande du voyageur.',
+                          style: TextStyle(fontSize: 12.5, color: Colors.black87),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
                         if (_isProcessingDecision)
-                          const Center(child: CircularProgressIndicator())
+                          const Center(
+                            child: CircularProgressIndicator(color: AppTheme.primary),
+                          )
                         else
                           Row(
                             children: [
@@ -546,16 +669,27 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppTheme.secondary,
                                     side: const BorderSide(color: AppTheme.secondary),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
                                   ),
-                                  child: Text(tr.rejectBtn),
+                                  child: Text(tr.rejectBtn, style: const TextStyle(fontWeight: FontWeight.bold)),
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: ElevatedButton(
                                   onPressed: _handleAccept,
-                                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-                                  child: Text(tr.acceptBtn),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: Text(tr.acceptBtn, style: const TextStyle(fontWeight: FontWeight.bold)),
                                 ),
                               ),
                             ],
@@ -568,60 +702,81 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
                 // Review Section if canReview
                 if (booking.canReview) ...[
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(tr.leaveReviewBtn, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Comment s\'est passé votre séjour ? Votre avis aide la communauté Akrili.',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 12),
-                          // Star Selector
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(5, (index) {
-                              final starNum = index + 1;
-                              return IconButton(
-                                icon: Icon(
-                                  starNum <= _selectedRating ? Icons.star_rounded : Icons.star_border_rounded,
-                                  color: Colors.amber,
-                                  size: 32,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _selectedRating = starNum;
-                                  });
-                                },
-                              );
-                            }),
-                          ),
-                          const SizedBox(height: 10),
-                          TextField(
-                            controller: _reviewController,
-                            decoration: const InputDecoration(
-                              labelText: 'Votre avis',
-                              hintText: 'Propreté, emplacement, accueil de l\'hôte...',
-                            ),
-                            maxLines: 3,
-                          ),
-                          const SizedBox(height: 14),
-                          ElevatedButton(
-                            onPressed: _isSubmittingReview ? null : _handleSubmitReview,
-                            child: _isSubmittingReview
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Text('Publier l\'avis'),
-                          ),
-                        ],
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
                       ),
+                      boxShadow: AppTheme.cardShadow,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          tr.leaveReviewBtn,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Comment s\'est passé votre séjour ? Votre avis aide grandement la communauté Akrili.',
+                          style: TextStyle(fontSize: 12.5, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 14),
+                        // Star Selector
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(5, (index) {
+                            final starNum = index + 1;
+                            return IconButton(
+                              icon: Icon(
+                                starNum <= _selectedRating
+                                    ? Icons.star_rounded
+                                    : Icons.star_border_rounded,
+                                color: Colors.amber,
+                                size: 34,
+                              ),
+                              onPressed: () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _selectedRating = starNum;
+                                });
+                              },
+                            );
+                          }),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _reviewController,
+                          decoration: const InputDecoration(
+                            labelText: 'Votre commentaire',
+                            hintText: 'Propreté, accueil, confort...',
+                          ),
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _isSubmittingReview ? null : _handleSubmitReview,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: _isSubmittingReview
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text(
+                                  'Publier mon avis',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -631,6 +786,31 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _detailRow(BuildContext context, String label, String value, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppTheme.primary),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }

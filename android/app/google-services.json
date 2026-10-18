@@ -1,21 +1,40 @@
 {
   "project_info": {
-    "project_number": "123456789012",
-    "project_id": "akrili-mobile",
-    "storage_bucket": "akrili-mobile.appspot.com"
+    "project_number": "1077518145828",
+    "project_id": "akrili-c2028",
+    "storage_bucket": "akrili-c2028.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:abcdef1234567890",
+        "mobilesdk_app_id": "1:1077518145828:android:9e11c6f9814843274e7bb1",
         "android_client_info": {
-          "package_name": "com.example.akrili"
+          "package_name": "com.offrine.akrili"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDummyKeyForAkriliFirebaseProject"
+          "current_key": "AIzaSyBD7FZOzZyjTUJdJ7uvaA7syw6zkB397Fo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1077518145828:android:9e11c6f9814843274e7bb1",
+        "android_client_info": {
+          "package_name": "com.offrine.akrili"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBD7FZOzZyjTUJdJ7uvaA7syw6zkB397Fo"
         }
       ],
       "services": {

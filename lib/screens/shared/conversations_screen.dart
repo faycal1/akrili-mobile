@@ -86,16 +86,23 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
           error: (_, __) => Text(tr.navInbox),
           data: (conv) => Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: AppTheme.primary.withOpacity(0.15),
-                child: Text(
-                  conv.otherParticipantName.isNotEmpty
-                      ? conv.otherParticipantName[0].toUpperCase()
-                      : 'U',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
+              Container(
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    conv.otherParticipantName.isNotEmpty
+                        ? conv.otherParticipantName[0].toUpperCase()
+                        : 'U',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
@@ -112,7 +119,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                     if (conv.propertyTitle != null)
                       Text(
                         conv.propertyTitle!,
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        style: const TextStyle(fontSize: 11.5, color: Colors.grey),
                         overflow: TextOverflow.ellipsis,
                       ),
                   ],
@@ -126,7 +133,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
         children: [
           Expanded(
             child: convAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.primary)),
               error: (err, _) => Center(
                 child: Text('Erreur: $err'),
               ),
@@ -136,11 +143,29 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                 if (allMessages.isEmpty) {
                   return Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Text(
-                        tr.noMessagesYet,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.grey),
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withOpacity(0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 40,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            tr.noMessagesYet,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -148,7 +173,8 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
 
                 return ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   itemCount: allMessages.length,
                   itemBuilder: (context, index) {
                     final msg = allMessages[index];
@@ -159,46 +185,72 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
             ),
           ),
 
-          // Message input bar
+          // Modern Message Input Bar
           SafeArea(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
-                border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.2))),
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white12
+                        : Colors.black.withOpacity(0.06),
+                  ),
+                ),
               ),
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        hintText: tr.typeYourMessage,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[900]
+                            : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white12
+                              : Colors.grey[300]!,
                         ),
-                        filled: true,
-                        fillColor: Colors.grey[200],
                       ),
-                      onSubmitted: (_) => _handleSend(),
+                      child: TextField(
+                        controller: _messageController,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          hintText: tr.typeYourMessage,
+                          hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          fillColor: Colors.transparent,
+                        ),
+                        onSubmitted: (_) => _handleSend(),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Material(
-                    color: AppTheme.primary,
-                    shape: const CircleBorder(),
-                    child: IconButton(
-                      icon: _isSending
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                      onPressed: _isSending ? null : _handleSend,
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      gradient: AppTheme.primaryGradient,
+                      shape: BoxShape.circle,
+                      boxShadow: AppTheme.primaryButtonShadow,
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: IconButton(
+                        icon: _isSending
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                        onPressed: _isSending ? null : _handleSend,
+                      ),
                     ),
                   ),
                 ],
@@ -218,6 +270,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMe = message.isMe;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -225,16 +278,33 @@ class _MessageBubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          maxWidth: MediaQuery.of(context).size.width * 0.76,
         ),
         decoration: BoxDecoration(
-          color: isMe ? AppTheme.primary : Colors.grey[200],
+          gradient: isMe ? AppTheme.primaryGradient : null,
+          color: isMe
+              ? null
+              : (isDark ? Colors.grey[850] : Colors.grey[100]),
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isMe ? 16 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 16),
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(isMe ? 18 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 18),
           ),
+          border: isMe
+              ? null
+              : Border.all(
+                  color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                ),
+          boxShadow: isMe
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primary.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : AppTheme.cardShadow,
         ),
         child: Column(
           crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -242,17 +312,31 @@ class _MessageBubble extends StatelessWidget {
             Text(
               message.body,
               style: TextStyle(
-                color: isMe ? Colors.white : Colors.black87,
-                fontSize: 14,
+                color: isMe ? Colors.white : (isDark ? Colors.white : Colors.black87),
+                fontSize: 14.5,
+                height: 1.3,
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              DateFormat('h:mm a').format(message.createdAt),
-              style: TextStyle(
-                color: isMe ? Colors.white70 : Colors.black54,
-                fontSize: 10,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  DateFormat('HH:mm').format(message.createdAt),
+                  style: TextStyle(
+                    color: isMe ? Colors.white.withOpacity(0.7) : Colors.grey,
+                    fontSize: 10.5,
+                  ),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.done_all_rounded,
+                    size: 13,
+                    color: Colors.white.withOpacity(0.75),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -260,3 +344,4 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 }
+

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -26,28 +27,45 @@ class NotificationsScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 70,
-                  height: 70,
+                  width: 80,
+                  height: 80,
                   decoration: BoxDecoration(
                     color: AppTheme.primary.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.notifications_none_rounded, size: 36, color: AppTheme.primary),
+                  child: const Icon(
+                    Icons.notifications_none_rounded,
+                    size: 40,
+                    color: AppTheme.primary,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Text(tr.signInForNotifications, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                Text(
+                  tr.signInForNotifications,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.3,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   tr.notificationsSignInPrompt,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  style: const TextStyle(color: Colors.grey, fontSize: 13.5),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => context.push('/login'),
-                  child: Text(tr.signIn),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(tr.signIn, style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 TextButton(
                   onPressed: () => context.push('/register'),
                   child: Text(tr.createAccount),
@@ -67,6 +85,7 @@ class NotificationsScreen extends ConsumerWidget {
         actions: [
           TextButton.icon(
             onPressed: () async {
+              HapticFeedback.lightImpact();
               try {
                 await ref.read(notificationRepositoryProvider).markAllAsRead();
                 ref.invalidate(notificationsListProvider);
@@ -84,26 +103,43 @@ class NotificationsScreen extends ConsumerWidget {
         ],
       ),
       body: notificationsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppTheme.primary),
+        ),
         error: (err, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.secondary),
-                const SizedBox(height: 12),
-                Text('Impossible de charger les notifications', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.error_outline_rounded,
+                    size: 44,
+                    color: AppTheme.secondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Impossible de charger les notifications',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 6),
                 Text(
                   err.toString().replaceFirst('Exception: ', ''),
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
                 const SizedBox(height: 16),
-                OutlinedButton(
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
                   onPressed: () => ref.refresh(notificationsListProvider),
-                  child: Text(tr.retry),
+                  label: Text(tr.retry),
                 ),
               ],
             ),
@@ -118,27 +154,31 @@ class NotificationsScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(22),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: AppTheme.primary.withOpacity(0.08),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.notifications_none_rounded,
-                        size: 52,
+                        size: 56,
                         color: AppTheme.primary,
                       ),
                     ),
                     const SizedBox(height: 20),
                     Text(
                       tr.noNotificationsYet,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Vous recevrez des notifications push et des alertes sur vos réservations et vos messages.',
+                      'Vous recevrez des alertes et des notifications instantanées pour vos réservations et vos messages.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                      style: TextStyle(color: Colors.grey, fontSize: 13.5),
                     ),
                   ],
                 ),
@@ -147,15 +187,18 @@ class NotificationsScreen extends ConsumerWidget {
           }
 
           return RefreshIndicator(
+            color: AppTheme.primary,
             onRefresh: () async {
               return ref.refresh(notificationsListProvider);
             },
             child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               itemCount: notifications.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final notification = notifications[index];
-                return _NotificationTile(notification: notification);
+                return _NotificationCard(notification: notification);
               },
             ),
           );
@@ -165,24 +208,16 @@ class NotificationsScreen extends ConsumerWidget {
   }
 }
 
-class _NotificationTile extends ConsumerWidget {
+class _NotificationCard extends ConsumerWidget {
   final NotificationModel notification;
-  const _NotificationTile({required this.notification});
-
-  Color _iconBgColor(String type) {
-    if (type.contains('Accepted')) return const Color(0xFF10B981).withOpacity(0.12);
-    if (type.contains('Rejected')) return AppTheme.secondary.withOpacity(0.12);
-    if (type.contains('Requested')) return const Color(0xFFF59E0B).withOpacity(0.12);
-    if (type.contains('Message')) return AppTheme.primary.withOpacity(0.12);
-    return Colors.blue.withOpacity(0.12);
-  }
+  const _NotificationCard({required this.notification});
 
   Color _iconColor(String type) {
     if (type.contains('Accepted')) return const Color(0xFF10B981);
     if (type.contains('Rejected')) return AppTheme.secondary;
     if (type.contains('Requested')) return const Color(0xFFF59E0B);
     if (type.contains('Message')) return AppTheme.primary;
-    return Colors.blue;
+    return const Color(0xFF6366F1);
   }
 
   IconData _iconData(String type) {
@@ -197,70 +232,113 @@ class _NotificationTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isUnread = !notification.isRead;
     final color = _iconColor(notification.type);
-    final bgColor = _iconBgColor(notification.type);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return ListTile(
-      tileColor: isUnread ? AppTheme.primary.withOpacity(0.05) : null,
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: bgColor,
-          shape: BoxShape.circle,
+    return Container(
+      decoration: BoxDecoration(
+        color: isUnread
+            ? (isDark ? AppTheme.primary.withOpacity(0.08) : const Color(0xFFF0FDFA))
+            : Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isUnread
+              ? AppTheme.primary.withOpacity(0.35)
+              : (isDark ? Colors.white12 : Colors.black.withOpacity(0.06)),
+          width: isUnread ? 1.5 : 1,
         ),
-        child: Icon(_iconData(notification.type), color: color, size: 22),
+        boxShadow: AppTheme.cardShadow,
       ),
-      title: Text(
-        notification.title,
-        style: TextStyle(
-          fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
-          fontSize: 14,
-        ),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 4),
-          Text(
-            notification.message,
-            style: TextStyle(
-              fontSize: 13,
-              color: isUnread ? Colors.black87 : Colors.grey[600],
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () async {
+            HapticFeedback.lightImpact();
+            if (isUnread) {
+              try {
+                await ref.read(notificationRepositoryProvider).markAsRead(notification.id);
+                ref.invalidate(notificationsListProvider);
+              } catch (_) {}
+            }
+
+            if (context.mounted) {
+              final deepId = notification.deepLinkId;
+              if (deepId != null && notification.deepLinkType == 'booking') {
+                context.push('/bookings/$deepId');
+              }
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(_iconData(notification.type), color: color, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notification.title,
+                              style: TextStyle(
+                                fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600,
+                                fontSize: 14.5,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          ),
+                          if (isUnread)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              margin: const EdgeInsets.only(left: 6),
+                              decoration: const BoxDecoration(
+                                color: AppTheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        notification.message,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+                          height: 1.35,
+                        ),
+                      ),
+                      if (notification.createdAt != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          DateFormat('dd MMM yyyy à HH:mm', 'fr').format(notification.createdAt!),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.grey[500] : Colors.grey[500],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          if (notification.createdAt != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              DateFormat('dd/MM/yyyy HH:mm').format(notification.createdAt!),
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
-            ),
-          ],
-        ],
+        ),
       ),
-      trailing: isUnread
-          ? Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: AppTheme.primary,
-                shape: BoxShape.circle,
-              ),
-            )
-          : null,
-      onTap: () async {
-        if (isUnread) {
-          try {
-            await ref.read(notificationRepositoryProvider).markAsRead(notification.id);
-            ref.invalidate(notificationsListProvider);
-          } catch (_) {}
-        }
-
-        if (context.mounted) {
-          final deepId = notification.deepLinkId;
-          if (deepId != null && notification.deepLinkType == 'booking') {
-            context.push('/bookings/$deepId');
-          }
-        }
-      },
     );
   }
 }

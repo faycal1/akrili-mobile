@@ -26,7 +26,7 @@ class NotificationModel {
       case 'MessageReceived':
         return 'Nouveau message';
       default:
-        return 'Notification';
+        return data['title']?.toString() ?? 'Notification';
     }
   }
 
