@@ -88,6 +88,37 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+    String? phone,
+    String? role,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.register(
+        name: name,
+        email: email,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+        phone: phone,
+        role: role,
+      );
+      final freshUser = await _repository.getMe();
+      _applyRoleMode(freshUser);
+      state = AsyncValue.data(freshUser);
+
+      // Register FCM device token
+      FcmService.instance.registerDeviceToken(_repository);
+      FcmService.instance.listenToTokenRefresh(_repository);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     state = const AsyncValue.loading();
     try {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/notification_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
 
 class NotificationsScreen extends ConsumerWidget {
@@ -11,6 +12,47 @@ class NotificationsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authUser = ref.watch(authNotifierProvider).valueOrNull;
+
+    if (authUser == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Notifications')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.notifications_none_rounded, size: 36, color: AppTheme.primary),
+                ),
+                const SizedBox(height: 16),
+                const Text('Sign in for Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                const Text('Receive instant alerts when hosts accept your booking requests or send you messages.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => context.push('/login'),
+                  child: const Text('Sign In'),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => context.push('/register'),
+                  child: const Text('Create an Account'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final notificationsAsync = ref.watch(notificationsListProvider);
 
     return Scaffold(

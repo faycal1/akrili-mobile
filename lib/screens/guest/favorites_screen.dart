@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/favorite_provider.dart';
 import '../shared/widgets/akrili_image.dart';
 
@@ -12,6 +13,47 @@ class FavoritesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authUser = ref.watch(authNotifierProvider).valueOrNull;
+
+    if (authUser == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Saved Stays')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondary.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.favorite_outline_rounded, size: 36, color: AppTheme.secondary),
+                ),
+                const SizedBox(height: 16),
+                const Text('Sign in to view Saved Stays', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                const Text('Save and organize your favorite stays to plan your upcoming visits and compare options.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => context.push('/login'),
+                  child: const Text('Sign In'),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => context.push('/register'),
+                  child: const Text('Create an Account'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final favoritesAsync = ref.watch(favoritesListProvider);
 
     return Scaffold(

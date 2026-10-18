@@ -1,9 +1,14 @@
 class ApiEndpoints {
   // Auth
   static const String login = '/api/auth/login';
+  static const String register = '/api/auth/register';
   static const String logout = '/api/auth/logout';
   static const String me = '/api/me';
   static const String deviceTokens = '/api/device-tokens';
+
+  // Geo
+  static const String wilayas = '/api/v1/geo/wilayas';
+  static String communes(int wilayaId) => '/api/v1/geo/wilayas/$wilayaId/communes';
 
   // V1 Shared
   static const String properties = '/api/v1/properties';

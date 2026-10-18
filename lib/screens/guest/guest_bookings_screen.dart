@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/booking_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
 import '../shared/widgets/akrili_image.dart';
 
@@ -19,6 +20,47 @@ class _GuestBookingsScreenState extends ConsumerState<GuestBookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authUser = ref.watch(authNotifierProvider).valueOrNull;
+
+    if (authUser == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('My Bookings')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.calendar_month_outlined, size: 36, color: AppTheme.primary),
+                ),
+                const SizedBox(height: 16),
+                const Text('Sign in to view Bookings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                const Text('Keep track of your stay reservations, confirmation status, and host reviews in one place.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => context.push('/login'),
+                  child: const Text('Sign In'),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => context.push('/register'),
+                  child: const Text('Create an Account'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final bookingsAsync = ref.watch(guestBookingsProvider);
 
     return Scaffold(

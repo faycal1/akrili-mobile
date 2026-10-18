@@ -4,6 +4,7 @@ import 'package:akrili/data/models/user_model.dart';
 import 'package:akrili/data/models/property_model.dart';
 import 'package:akrili/data/models/booking_model.dart';
 import 'package:akrili/data/models/notification_model.dart';
+import 'package:akrili/providers/property_provider.dart';
 
 void main() {
   group('Akrili Models Unit Tests', () {
@@ -110,7 +111,7 @@ void main() {
       expect(resolvedRelative, equals('http://10.0.2.2:8000/storage/media/16/image.webp'));
 
       // Test external CDN URLs (preserved)
-      final externalUrl = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750';
+      const externalUrl = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750';
       expect(ApiClient.resolveUrl(externalUrl), equals(externalUrl));
 
       // Test null or empty
@@ -144,6 +145,34 @@ void main() {
         property.gallery[1],
         equals('http://10.0.2.2:8000/storage/media/18/bedroom.webp'),
       );
+    });
+
+    test('PropertyFilterState activeCount and copyWith work as expected', () {
+      const initial = PropertyFilterState();
+      expect(initial.activeCount, equals(0));
+      expect(initial.hasActiveFilters, isFalse);
+
+      final withWilaya = initial.copyWith(
+        wilayaId: 16,
+        wilayaName: 'Alger',
+        search: 'villa',
+      );
+      expect(withWilaya.activeCount, equals(2));
+      expect(withWilaya.hasActiveFilters, isTrue);
+
+      final withPriceAndType = withWilaya.copyWith(
+        type: 'villa',
+        minPrice: 5000,
+        maxPrice: 20000,
+        capacity: 4,
+      );
+      // search (1) + wilaya (1) + type (1) + price (1) + capacity (1) = 5
+      expect(withPriceAndType.activeCount, equals(5));
+
+      final clearedWilaya = withPriceAndType.copyWith(clearWilaya: true);
+      expect(clearedWilaya.wilayaId, isNull);
+      expect(clearedWilaya.wilayaName, isNull);
+      expect(clearedWilaya.search, equals('villa'));
     });
   });
 }

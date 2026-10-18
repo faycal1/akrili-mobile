@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 
@@ -232,7 +233,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           )
                         : const Text('Log In'),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 14),
+
+                  // Don't have an account link
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Don't have an account?", style: TextStyle(fontSize: 14)),
+                      TextButton(
+                        onPressed: () {
+                          context.push('/register');
+                        },
+                        child: const Text('Sign Up', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+
+                  // Continue as guest
+                  TextButton(
+                    onPressed: () => context.go('/explore'),
+                    child: Text(
+                      'Continue browsing as Guest',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
                   // Quick test credentials for Paired Review
                   const Row(

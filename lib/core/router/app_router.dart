@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/auth/login_screen.dart';
+import '../../screens/auth/register_screen.dart';
 import '../../screens/guest/booking_create_screen.dart';
 import '../../screens/guest/guest_shell_screen.dart';
 import '../../screens/guest/property_detail_screen.dart';
@@ -38,7 +39,8 @@ class RouterNotifier extends ChangeNotifier {
   }
 
   String? redirect(BuildContext context, GoRouterState state) {
-    final isLoggingIn = state.matchedLocation == '/login';
+    final location = state.matchedLocation;
+    final isAuthRoute = location == '/login' || location == '/register';
 
     // Still checking initial auth
     if (_isLoading) {
@@ -47,30 +49,31 @@ class RouterNotifier extends ChangeNotifier {
 
     final isAuthenticated = _user != null;
 
-    // Unauthenticated users must go to login
-    if (!isAuthenticated) {
-      return isLoggingIn ? null : '/login';
-    }
-
-    // If user is already authenticated and visits /login, redirect
-    if (isLoggingIn) {
+    // If user is already authenticated and visits /login or /register, redirect to app
+    if (isAuthenticated && isAuthRoute) {
       return _activeRole == 'host' ? '/host' : '/explore';
     }
 
     // Root location redirection
-    if (state.matchedLocation == '/') {
-      return _activeRole == 'host' ? '/host' : '/explore';
+    if (location == '/') {
+      return (_activeRole == 'host' && isAuthenticated) ? '/host' : '/explore';
     }
 
-    // Block non-hosts or guest-mode users from accessing /host routes
-    if (state.matchedLocation.startsWith('/host')) {
+    // Booking creation requires login
+    if (location.endsWith('/book')) {
+      if (!isAuthenticated) return '/login';
+    }
+
+    // Host routes require authenticated host user
+    if (location.startsWith('/host')) {
+      if (!isAuthenticated) return '/login';
       if (!_user!.isHost || _activeRole != 'host') {
         return '/explore';
       }
     }
 
     // If active role is host and user visits /explore root, route to /host
-    if (_activeRole == 'host' && state.matchedLocation == '/explore') {
+    if (_activeRole == 'host' && isAuthenticated && location == '/explore') {
       return '/host';
     }
 
@@ -96,6 +99,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
       ),
 
       // Guest Shell routes

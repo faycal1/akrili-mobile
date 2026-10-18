@@ -38,6 +38,38 @@ class AuthRepository {
     return user;
   }
 
+  Future<UserModel> register({
+    required String name,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+    String? phone,
+    String? role,
+    String? deviceName,
+  }) async {
+    final response = await _client.dio.post(
+      ApiEndpoints.register,
+      data: {
+        'name': name,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+        if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+        'role': role ?? 'tenant',
+        'device_name': deviceName ?? 'Mobile App',
+      },
+    );
+
+    final data = response.data as Map<String, dynamic>;
+    final token = data['token'] as String;
+    final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+
+    await _storage.saveToken(token);
+    await _storage.saveUserJson(jsonEncode(user.toJson()));
+
+    return user;
+  }
+
   Future<void> logout() async {
     final fcmToken = await _storage.getFcmToken();
     if (fcmToken != null && fcmToken.isNotEmpty) {

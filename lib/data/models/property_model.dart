@@ -9,7 +9,7 @@ class WilayaModel {
   WilayaModel({required this.id, this.code, required this.name});
 
   factory WilayaModel.fromJson(Map<String, dynamic> json) {
-    var rawName = json['name'];
+    var rawName = json['name'] ?? json['label'];
     String resolvedName = 'Wilaya';
     if (rawName is String) {
       resolvedName = rawName;
@@ -35,7 +35,7 @@ class CommuneModel {
   CommuneModel({required this.id, required this.name});
 
   factory CommuneModel.fromJson(Map<String, dynamic> json) {
-    var rawName = json['name'];
+    var rawName = json['name'] ?? json['label'];
     String resolvedName = 'Commune';
     if (rawName is String) {
       resolvedName = rawName;
