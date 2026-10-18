@@ -99,14 +99,14 @@ Use Eloquent API Resources in `app/Http/Resources/`. Version endpoints under `/a
 
 Project: `/home/faycal/AndroidStudioProjects/akrili`
 
-- [ ] Packages: `dio`, `flutter_riverpod`, `firebase_core`, `firebase_messaging`, `flutter_secure_storage`, `go_router`
-- [ ] Firebase Android setup: `google-services.json`, Gradle plugin
-- [ ] Auth flow: login → store token in secure storage → Dio auth interceptor
-- [ ] On login + `onTokenRefresh`: register FCM token via `POST /api/device-tokens`
-- [ ] On logout: `DELETE /api/device-tokens/{token}` + clear secure storage
-- [ ] After `/api/me`: branch host stack vs guest stack by role
-- [ ] Screens v1: auth, property search + detail, booking create (guest), incoming bookings accept/reject (host), notifications feed, conversations
-- [ ] FCM handlers: foreground (local notification), background handler, tap → deep link to booking/conversation
+- [x] Packages: `dio`, `flutter_riverpod`, `firebase_core`, `firebase_messaging`, `flutter_secure_storage`, `go_router`, `intl`, `flutter_local_notifications`
+- [x] Firebase Android setup: `google-services.json` template, Gradle plugin & settings
+- [x] Auth flow: login → store token in secure storage → Dio auth interceptor
+- [x] On login + `onTokenRefresh`: register FCM token via `POST /api/device-tokens`
+- [x] On logout: `DELETE /api/device-tokens/{token}` + clear secure storage
+- [x] After `/api/me`: branch host stack vs guest stack by role (+ dynamic mode switcher in profile)
+- [x] Screens v1: auth, property search + detail, booking create (guest), incoming bookings accept/reject (host), notifications feed, conversations, favorites
+- [x] FCM handlers: foreground (local notification), background handler, tap → deep link to booking/conversation
 
 **Review gate 4:** token never logged, FCM lifecycle correct (refresh + logout clears server token), deep links resolve, role branching correct.
 
@@ -115,3 +115,9 @@ Project: `/home/faycal/AndroidStudioProjects/akrili`
 ## Progress log
 
 - 2026-10-18 — plan created.
+- 2026-10-18 — Phase 0 completed (Sanctum + Firebase credentials gitignored).
+- 2026-10-18 — Phase 1 completed (Sanctum PAT + Device tokens + 8 passing tests).
+- 2026-10-18 — Phase 2 completed (JSON API resources v1 + policies + 8 passing tests).
+- 2026-10-18 — Phase 3 completed (FCM push + DB notifications + 6 passing tests, 25 total).
+- 2026-10-18 — Phase 4 completed (Flutter app with Riverpod, GoRouter role navigation, FCM lifecycle, guest and host flows, all analyzer checks and unit tests passing).
+
