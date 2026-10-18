@@ -61,6 +61,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return activeRole == 'host' ? '/host' : '/explore';
       }
 
+      // Block non-hosts or guest-mode users from accessing /host routes
+      if (state.matchedLocation.startsWith('/host')) {
+        if (!user.isHost || activeRole != 'host') {
+          return '/explore';
+        }
+      }
+
+      // If active role is host and user visits /explore root, route to /host
+      if (activeRole == 'host' && state.matchedLocation == '/explore') {
+        return '/host';
+      }
+
       return null;
     },
     routes: [

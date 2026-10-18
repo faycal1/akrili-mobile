@@ -33,24 +33,27 @@ class ApiClient {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
-          // SAFE LOGGING: Never log Authorization header or secret keys
+          // SAFE LOGGING: Never log Authorization header or raw device tokens
+          final safeUri = _sanitizeUri(options.uri);
           developer.log(
-            '--> ${options.method} ${options.uri}',
+            '--> ${options.method} $safeUri',
             name: 'ApiClient',
           );
 
           return handler.next(options);
         },
         onResponse: (response, handler) {
+          final safeUri = _sanitizeUri(response.requestOptions.uri);
           developer.log(
-            '<-- ${response.statusCode} ${response.requestOptions.uri}',
+            '<-- ${response.statusCode} $safeUri',
             name: 'ApiClient',
           );
           return handler.next(response);
         },
         onError: (DioException error, handler) {
+          final safeUri = _sanitizeUri(error.requestOptions.uri);
           developer.log(
-            '<-- ERROR ${error.response?.statusCode} ${error.requestOptions.uri}: ${error.message}',
+            '<-- ERROR ${error.response?.statusCode} $safeUri: ${error.message}',
             name: 'ApiClient',
           );
 
@@ -62,6 +65,14 @@ class ApiClient {
         },
       ),
     );
+  }
+
+  static String _sanitizeUri(Uri uri) {
+    var path = uri.path;
+    if (path.contains('/device-tokens/')) {
+      path = path.replaceFirst(RegExp(r'/device-tokens/.*'), '/device-tokens/[TOKEN]');
+    }
+    return uri.replace(path: path).toString();
   }
 
   void updateBaseUrl(String newUrl) {

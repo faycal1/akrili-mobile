@@ -9,12 +9,19 @@ final secureStorageProvider = Provider<SecureStorageService>((ref) {
   return SecureStorageService();
 });
 
+final onUnauthorizedCallbackProvider = StateProvider<void Function()?>((ref) => null);
+
 final apiClientProvider = Provider<ApiClient>((ref) {
   final storage = ref.watch(secureStorageProvider);
   return ApiClient(
     storage: storage,
     onUnauthorized: () {
-      storage.clearAuth();
+      final callback = ref.read(onUnauthorizedCallbackProvider);
+      if (callback != null) {
+        callback();
+      } else {
+        storage.clearAuth();
+      }
     },
   );
 });
@@ -35,6 +42,9 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
 
   AuthStateNotifier(this._repository, this._storage, this._ref)
       : super(const AsyncValue.loading()) {
+    _ref.read(onUnauthorizedCallbackProvider.notifier).state = () {
+      handleUnauthorized();
+    };
     checkAuth();
   }
 

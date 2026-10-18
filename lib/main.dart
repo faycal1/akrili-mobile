@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'core/config/app_config.dart';
 import 'core/notifications/fcm_service.dart';
 import 'core/router/app_router.dart';
@@ -14,9 +15,9 @@ void main() async {
       final context = rootNavigatorKey.currentContext;
       if (context != null) {
         if (type == 'booking') {
-          rootNavigatorKey.currentState?.pushNamed('/bookings/$id');
+          GoRouter.of(context).push('/bookings/$id');
         } else if (type == 'conversation') {
-          rootNavigatorKey.currentState?.pushNamed('/conversations/$id');
+          GoRouter.of(context).push('/conversations/$id');
         }
       }
     },
