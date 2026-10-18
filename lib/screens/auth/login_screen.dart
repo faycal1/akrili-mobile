@@ -13,8 +13,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'tenant@example.com');
-  final _passwordController = TextEditingController(text: 'secret123');
+  final _emailController = TextEditingController(text: 'tenant@akrili.test');
+  final _passwordController = TextEditingController(text: 'azerty');
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
@@ -289,8 +289,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            _emailController.text = 'tenant@example.com';
-                            _passwordController.text = 'secret123';
+                            _emailController.text = 'tenant@akrili.test';
+                            _passwordController.text = 'azerty';
                           },
                           child: const Text('Guest'),
                         ),
@@ -299,8 +299,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            _emailController.text = 'owner@example.com';
-                            _passwordController.text = 'secret123';
+                            _emailController.text = 'owner@akrili.test';
+                            _passwordController.text = 'azerty';
                           },
                           child: const Text('Host'),
                         ),
