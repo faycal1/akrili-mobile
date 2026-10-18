@@ -24,6 +24,7 @@ class ApiClient {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Accept-Language': 'fr',
         },
       ),
     );
@@ -31,6 +32,9 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          final locale = await _storage.getLocale() ?? 'fr';
+          options.headers['Accept-Language'] = locale;
+
           final token = await _storage.getToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';

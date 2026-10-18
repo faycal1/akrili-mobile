@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/booking_model.dart';
 import '../../providers/booking_provider.dart';
@@ -18,15 +19,16 @@ class _HostBookingsScreenState extends ConsumerState<HostBookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final bookingsAsync = ref.watch(hostBookingsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reservations'),
+        title: Text(tr.hostReservationsTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
+            tooltip: tr.retry,
             onPressed: () => ref.refresh(hostBookingsProvider),
           ),
         ],
@@ -37,13 +39,13 @@ class _HostBookingsScreenState extends ConsumerState<HostBookingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _buildFilterChip('All', 'all'),
+                _buildFilterChip(tr.seeAll, 'all'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Pending', 'pending'),
+                _buildFilterChip(tr.statusPending, 'pending'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Confirmed', 'confirmed'),
+                _buildFilterChip(tr.statusConfirmed, 'confirmed'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Past / Other', 'other'),
+                _buildFilterChip('Passées / Autres', 'other'),
               ],
             ),
           ),
@@ -60,7 +62,7 @@ class _HostBookingsScreenState extends ConsumerState<HostBookingsScreen> {
                 const Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.secondary),
                 const SizedBox(height: 12),
                 Text(
-                  'Failed to load reservations',
+                  'Impossible de charger les réservations',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 4),
@@ -72,7 +74,7 @@ class _HostBookingsScreenState extends ConsumerState<HostBookingsScreen> {
                 const SizedBox(height: 16),
                 OutlinedButton(
                   onPressed: () => ref.refresh(hostBookingsProvider),
-                  child: const Text('Try Again'),
+                  child: Text(tr.retry),
                 ),
               ],
             ),
@@ -109,13 +111,14 @@ class _HostBookingsScreenState extends ConsumerState<HostBookingsScreen> {
                     const SizedBox(height: 20),
                     Text(
                       _selectedFilter == 'all'
-                          ? 'No reservation requests yet'
-                          : 'No $_selectedFilter reservations',
+                          ? 'Aucune demande de réservation'
+                          : 'Aucune réservation dans cette catégorie',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'When guests book your properties, their reservation requests will appear here with instant decision actions.',
+                      'Lorsque les voyageurs réservent vos logements, leurs demandes s\'afficheront ici pour validation.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey, fontSize: 13),
                     ),
@@ -189,23 +192,41 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
     }
   }
 
+  String _statusLocalized(String status, AppLocalizations tr) {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        return tr.statusConfirmed;
+      case 'pending':
+        return tr.statusPending;
+      case 'rejected':
+        return tr.statusRejected;
+      case 'cancelled':
+        return tr.statusCancelled;
+      case 'completed':
+        return tr.statusCompleted;
+      default:
+        return status;
+    }
+  }
+
   Future<void> _handleAccept() async {
+    final tr = context.tr;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Accept Reservation?'),
+        title: Text(tr.acceptBtn),
         content: Text(
-          'Confirm booking for ${widget.booking.tenant?.name ?? "the guest"} from ${widget.booking.checkIn} to ${widget.booking.checkOut} (${NumberFormat("#,###").format(widget.booking.totalPrice)} DZD)?',
+          'Confirmer la réservation pour ${widget.booking.tenant?.name ?? "le voyageur"} du ${widget.booking.checkIn} au ${widget.booking.checkOut} (${NumberFormat("#,###").format(widget.booking.totalPrice)} DZD) ?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(tr.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-            child: const Text('Accept Booking'),
+            child: Text(tr.acceptBtn),
           ),
         ],
       ),
@@ -220,13 +241,13 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
       ref.invalidate(hostBookingsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reservation accepted! Guest has been notified.')),
+          SnackBar(content: Text(tr.bookingAcceptedSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString().replaceFirst("Exception: ", "")}')),
+          SnackBar(content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}')),
         );
       }
     } finally {
@@ -235,25 +256,26 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
   }
 
   Future<void> _handleReject() async {
+    final tr = context.tr;
     final reasonController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Decline Reservation?'),
+        title: const Text('Refuser la réservation ?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Are you sure you want to decline this request? You may provide a reason to the guest.',
+              'Voulez-vous vraiment refuser cette demande ? Vous pouvez indiquer un motif (optionnel) :',
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: reasonController,
               decoration: const InputDecoration(
-                labelText: 'Reason (Optional)',
-                hintText: 'e.g., Dates no longer available',
+                labelText: 'Motif (Optionnel)',
+                hintText: 'ex. Dates indisponibles',
               ),
               maxLines: 2,
             ),
@@ -262,12 +284,12 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(tr.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondary),
-            child: const Text('Decline Booking'),
+            child: Text(tr.rejectBtn),
           ),
         ],
       ),
@@ -282,13 +304,13 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
       ref.invalidate(hostBookingsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reservation declined.')),
+          SnackBar(content: Text(tr.bookingRejectedSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString().replaceFirst("Exception: ", "")}')),
+          SnackBar(content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}')),
         );
       }
     } finally {
@@ -298,6 +320,7 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final booking = widget.booking;
     final statusColor = _statusColor(booking.status);
     final property = booking.property;
@@ -324,7 +347,7 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
                         radius: 14,
                         backgroundColor: AppTheme.primary.withOpacity(0.15),
                         child: Text(
-                          (tenant?.name ?? 'G')[0].toUpperCase(),
+                          (tenant?.name ?? 'V')[0].toUpperCase(),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -334,7 +357,7 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        tenant?.name ?? 'Guest',
+                        tenant?.name ?? tr.guestBadge,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ],
@@ -346,7 +369,7 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      booking.status.toUpperCase(),
+                      _statusLocalized(booking.status, tr).toUpperCase(),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -360,7 +383,7 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
 
               // Property & Dates info
               Text(
-                property?.title ?? 'Listing #${booking.property?.id ?? ""}',
+                property?.title ?? 'Logement #${booking.property?.id ?? ""}',
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -378,7 +401,7 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
                   const Icon(Icons.people_outline_rounded, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    '${booking.guests} guest${booking.guests > 1 ? "s" : ""}',
+                    '${booking.guests} ${tr.guestsUnit}',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
@@ -389,7 +412,7 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Payout / Total:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Text('Total / Versement :', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   Text(
                     '${NumberFormat("#,###").format(booking.totalPrice)} DZD',
                     style: const TextStyle(
@@ -425,7 +448,7 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
                             side: const BorderSide(color: AppTheme.secondary),
                             padding: const EdgeInsets.symmetric(vertical: 10),
                           ),
-                          child: const Text('Decline'),
+                          child: Text(tr.rejectBtn),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -436,7 +459,7 @@ class _HostBookingCardState extends ConsumerState<_HostBookingCard> {
                             backgroundColor: const Color(0xFF10B981),
                             padding: const EdgeInsets.symmetric(vertical: 10),
                           ),
-                          child: const Text('Accept'),
+                          child: Text(tr.acceptBtn),
                         ),
                       ),
                     ],

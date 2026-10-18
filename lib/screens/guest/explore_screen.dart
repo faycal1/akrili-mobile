@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
 import '../../providers/auth_provider.dart';
@@ -50,6 +51,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
   void _showFilterModal() {
     final currentFilter = ref.read(propertyFilterProvider);
+    final tr = context.tr;
 
     int? tempWilayaId = currentFilter.wilayaId;
     String? tempWilayaName = currentFilter.wilayaName;
@@ -110,9 +112,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Filter Properties',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            Text(
+                              tr.filtersTitle,
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                             ),
                             TextButton(
                               onPressed: () {
@@ -127,7 +129,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                                   maxPriceController.clear();
                                 });
                               },
-                              child: const Text('Reset All'),
+                              child: Text(tr.clearAll),
                             ),
                           ],
                         ),
@@ -135,9 +137,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         const SizedBox(height: 10),
 
                         // Wilaya Selector
-                        const Text(
-                          'Wilaya (Province)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        Text(
+                          tr.wilayaLabel,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         const SizedBox(height: 6),
                         wilayasAsync.when(
@@ -155,15 +157,16 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                             return DropdownButtonFormField<int?>(
                               value: tempWilayaId,
                               isExpanded: true,
-                              decoration: const InputDecoration(
-                                hintText: 'Select Wilaya (all 58 wilayas)',
-                                prefixIcon: Icon(Icons.location_on_outlined),
+                              decoration: InputDecoration(
+                                hintText: tr.selectWilaya,
+                                prefixIcon: const Icon(Icons.location_on_outlined),
                               ),
                               items: [
-                                const DropdownMenuItem<int?>(
+                                DropdownMenuItem<int?>(
                                   value: null,
-                                  child: Text('All Wilayas (Entire Country)'),
+                                  child: Text(tr.allWilayas),
                                 ),
+
                                 ...wilayas.map((w) {
                                   final displayName = w.code != null ? '${w.code} — ${w.name}' : w.name;
                                   return DropdownMenuItem<int?>(
@@ -192,9 +195,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         const SizedBox(height: 16),
 
                         // Commune Selector
-                        const Text(
-                          'Commune (Municipality)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        Text(
+                          tr.communeLabel,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         const SizedBox(height: 6),
                         if (tempWilayaId == null)
@@ -205,13 +208,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: Colors.grey.withOpacity(0.2)),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
-                                Icon(Icons.info_outline, size: 18, color: Colors.grey),
-                                SizedBox(width: 8),
+                                const Icon(Icons.info_outline, size: 18, color: Colors.grey),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'Select a Wilaya first to choose a commune',
-                                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                                  tr.chooseWilayaFirst,
+                                  style: const TextStyle(fontSize: 13, color: Colors.grey),
                                 ),
                               ],
                             ),
@@ -232,14 +235,14 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               return DropdownButtonFormField<int?>(
                                 value: tempCommuneId,
                                 isExpanded: true,
-                                decoration: const InputDecoration(
-                                  hintText: 'All Communes in this Wilaya',
-                                  prefixIcon: Icon(Icons.map_outlined),
+                                decoration: InputDecoration(
+                                  hintText: tr.allCommunes,
+                                  prefixIcon: const Icon(Icons.map_outlined),
                                 ),
                                 items: [
-                                  const DropdownMenuItem<int?>(
+                                  DropdownMenuItem<int?>(
                                     value: null,
-                                    child: Text('All Communes in this Wilaya'),
+                                    child: Text(tr.allCommunes),
                                   ),
                                   ...communes.map((c) {
                                     return DropdownMenuItem<int?>(
@@ -265,9 +268,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         const SizedBox(height: 18),
 
                         // Property Type
-                        const Text(
-                          'Property Type',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        Text(
+                          tr.propertyType,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         const SizedBox(height: 8),
                         Wrap(
@@ -283,9 +286,26 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                           ].map((typeKey) {
                             final isSelected = (tempType == null && typeKey == 'all') ||
                                 (tempType == typeKey);
-                            final label = typeKey == 'all'
-                                ? 'All Types'
-                                : typeKey[0].toUpperCase() + typeKey.substring(1);
+                            String label;
+                            switch (typeKey) {
+                              case 'apartment':
+                                label = tr.typeApartment;
+                                break;
+                              case 'villa':
+                                label = tr.typeVilla;
+                                break;
+                              case 'studio':
+                                label = tr.typeStudio;
+                                break;
+                              case 'chalet':
+                                label = tr.typeBungalow;
+                                break;
+                              case 'hotel':
+                                label = tr.typeTraditional;
+                                break;
+                              default:
+                                label = tr.allTypes;
+                            }
 
                             return ChoiceChip(
                               label: Text(label),
@@ -301,9 +321,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         const SizedBox(height: 18),
 
                         // Price Range
-                        const Text(
-                          'Price Range per Night (DZD)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        Text(
+                          tr.pricePerNight,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -313,7 +333,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                                 controller: minPriceController,
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
-                                  labelText: 'Min Price',
+                                  labelText: 'Min (DZD)',
                                   suffixText: 'DZD',
                                   hintText: '0',
                                 ),
@@ -325,9 +345,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                                 controller: maxPriceController,
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
-                                  labelText: 'Max Price',
+                                  labelText: 'Max (DZD)',
                                   suffixText: 'DZD',
-                                  hintText: 'No limit',
+                                  hintText: 'Max',
                                 ),
                               ),
                             ),
@@ -339,9 +359,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Guests & Capacity',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            Text(
+                              tr.minGuestsLabel,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             Row(
                               children: [
@@ -403,9 +423,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'Apply Filters',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          child: Text(
+                            tr.applyFilters,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -426,6 +446,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     final filterState = ref.watch(propertyFilterProvider);
     final authUser = ref.watch(authNotifierProvider).valueOrNull;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tr = context.tr;
 
     return Scaffold(
       appBar: AppBar(
@@ -464,7 +485,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        authUser.isHost ? 'Host' : 'Guest',
+                        authUser.isHost ? tr.hostBadge : tr.guestBadge,
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -494,7 +515,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               padding: const EdgeInsets.only(right: 12),
               child: TextButton.icon(
                 icon: const Icon(Icons.login_rounded, size: 18),
-                label: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: Text(tr.signIn, style: const TextStyle(fontWeight: FontWeight.bold)),
                 style: TextButton.styleFrom(
                   foregroundColor: AppTheme.primary,
                   backgroundColor: AppTheme.primary.withOpacity(0.1),
@@ -538,7 +559,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         setState(() {});
                       },
                       decoration: InputDecoration(
-                        hintText: 'Search city, stay name, or wilaya...',
+                        hintText: tr.searchHint,
                         hintStyle: TextStyle(
                           fontSize: 14,
                           color: isDark ? Colors.grey[400] : Colors.grey[500],
@@ -695,7 +716,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: InputChip(
-                        label: Text('${filterState.capacity}+ guests'),
+                        label: Text('${filterState.capacity}+ ${tr.guestsUnit}'),
                         onDeleted: () {
                           ref.read(propertyFilterProvider.notifier).state =
                               filterState.copyWith(clearCapacity: true);
@@ -704,7 +725,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     ),
                   TextButton.icon(
                     icon: const Icon(Icons.close_rounded, size: 16),
-                    label: const Text('Clear All', style: TextStyle(fontSize: 12)),
+                    label: Text(tr.clearAll, style: const TextStyle(fontSize: 12)),
                     onPressed: () {
                       _searchController.clear();
                       ref.read(propertyFilterProvider.notifier).state =
@@ -737,14 +758,14 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                             const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
                             const SizedBox(height: 12),
                             Text(
-                              'Could not load properties:\n${feedState.error}',
+                              feedState.error.toString(),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: () =>
                                   ref.read(propertiesFeedProvider.notifier).refresh(),
-                              child: const Text('Retry'),
+                              child: Text(tr.retry),
                             ),
                           ],
                         ),
@@ -766,15 +787,15 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               color: Colors.grey.withOpacity(0.6),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
-                              'No properties found',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            Text(
+                              tr.noPropertiesFound,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               filterState.hasActiveFilters
-                                  ? 'No stays match your active search or filters. Try adjusting or resetting them.'
-                                  : 'There are currently no stays published yet.',
+                                  ? tr.adjustFiltersPrompt
+                                  : 'Aucun séjour disponible pour le moment.',
                               textAlign: TextAlign.center,
                               style: const TextStyle(color: Colors.grey, fontSize: 13),
                             ),
@@ -782,7 +803,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               const SizedBox(height: 18),
                               OutlinedButton.icon(
                                 icon: const Icon(Icons.refresh_rounded),
-                                label: const Text('Reset All Filters'),
+                                label: Text(tr.clearAll),
                                 onPressed: () {
                                   _searchController.clear();
                                   ref.read(propertyFilterProvider.notifier).state =
@@ -838,7 +859,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                "You've seen all ${feedState.properties.length} stays",
+                                tr.seenAllStays,
                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                               ),
                               const SizedBox(width: 8),
@@ -872,6 +893,8 @@ class _PropertyCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tr = context.tr;
+
     return GestureDetector(
       onTap: () {
         context.push('/properties/${property.id}');
@@ -929,14 +952,14 @@ class _PropertyCard extends ConsumerWidget {
                         color: Colors.black.withOpacity(0.75),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.bolt, color: Colors.amber, size: 16),
-                          SizedBox(width: 4),
+                          const Icon(Icons.bolt, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
                           Text(
-                            'Instant Book',
-                            style: TextStyle(
+                            tr.instantBookingBadge,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -977,7 +1000,7 @@ class _PropertyCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${property.commune?.name ?? ""}, ${property.wilaya?.name ?? "Algeria"} • ${property.capacity} guests',
+                    '${property.commune?.name ?? ""}, ${property.wilaya?.name ?? "Algérie"} • ${property.capacity} ${tr.guestsUnit}',
                     style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                   const SizedBox(height: 10),
@@ -991,9 +1014,9 @@ class _PropertyCard extends ConsumerWidget {
                           color: AppTheme.primary,
                         ),
                       ),
-                      const Text(
-                        ' / night',
-                        style: TextStyle(color: Colors.grey, fontSize: 13),
+                      Text(
+                        ' / ${tr.nightsUnit.replaceAll("s", "")}',
+                        style: const TextStyle(color: Colors.grey, fontSize: 13),
                       ),
                     ],
                   ),

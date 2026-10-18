@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/conversation_model.dart';
 import '../../data/repositories/conversation_repository.dart';
@@ -64,7 +65,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send message: $e')),
+          SnackBar(content: Text('${context.tr.sendMessageFailed}: $e')),
         );
       }
     } finally {
@@ -74,14 +75,15 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final convAsync = ref.watch(conversationDetailProvider(widget.id));
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
         title: convAsync.when(
-          loading: () => const Text('Conversation'),
-          error: (_, __) => const Text('Conversation'),
+          loading: () => Text(tr.navInbox),
+          error: (_, __) => Text(tr.navInbox),
           data: (conv) => Row(
             children: [
               CircleAvatar(
@@ -126,16 +128,20 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
             child: convAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(
-                child: Text('Error loading conversation: $err'),
+                child: Text('Erreur: $err'),
               ),
               data: (conv) {
                 final allMessages = [...conv.messages, ..._extraMessages];
 
                 if (allMessages.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No messages yet. Send a message to start chatting!',
-                      style: TextStyle(color: Colors.grey),
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Text(
+                        tr.noMessagesYet,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                     ),
                   );
                 }
@@ -168,7 +174,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                       controller: _messageController,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
-                        hintText: 'Type your message...',
+                        hintText: tr.typeYourMessage,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),

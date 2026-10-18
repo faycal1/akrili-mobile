@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/notification_provider.dart';
 import '../shared/notifications_screen.dart';
@@ -34,6 +35,7 @@ class _HostShellScreenState extends ConsumerState<HostShellScreen> {
   @override
   Widget build(BuildContext context) {
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    final tr = context.tr;
 
     return Scaffold(
       body: IndexedStack(
@@ -48,15 +50,15 @@ class _HostShellScreenState extends ConsumerState<HostShellScreen> {
           });
         },
         destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_work_outlined),
-            selectedIcon: Icon(Icons.home_work_rounded, color: AppTheme.primary),
-            label: 'Listings',
+          NavigationDestination(
+            icon: const Icon(Icons.home_work_outlined),
+            selectedIcon: const Icon(Icons.home_work_rounded, color: AppTheme.primary),
+            label: tr.navListings,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month_rounded, color: AppTheme.primary),
-            label: 'Reservations',
+          NavigationDestination(
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month_rounded, color: AppTheme.primary),
+            label: tr.navReservations,
           ),
           NavigationDestination(
             icon: Badge(
@@ -69,15 +71,16 @@ class _HostShellScreenState extends ConsumerState<HostShellScreen> {
               label: Text('$unreadCount'),
               child: const Icon(Icons.notifications_rounded, color: AppTheme.primary),
             ),
-            label: 'Inbox',
+            label: tr.navInbox,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded, color: AppTheme.primary),
-            label: 'Host Profile',
+          NavigationDestination(
+            icon: const Icon(Icons.person_outline_rounded),
+            selectedIcon: const Icon(Icons.person_rounded, color: AppTheme.primary),
+            label: tr.navProfile,
           ),
         ],
       ),
     );
   }
 }
+

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 
@@ -27,15 +28,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  String _parseErrorMessage(dynamic error) {
+  String _parseErrorMessage(dynamic error, AppLocalizations tr) {
     if (error is DioException) {
       if (error.type == DioExceptionType.connectionTimeout ||
           error.type == DioExceptionType.sendTimeout ||
           error.type == DioExceptionType.receiveTimeout) {
-        return 'Connection timed out. Please check your network or server URL.';
+        return tr.connectionTimeoutMsg;
       }
       if (error.type == DioExceptionType.connectionError) {
-        return 'Cannot connect to server. Check server settings (gear icon top right).';
+        return tr.cannotConnectMsg;
       }
       final response = error.response;
       if (response != null && response.data != null) {
@@ -58,18 +59,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
       }
       if (response?.statusCode == 401) {
-        return 'Invalid email/phone or password.';
+        return tr.invalidCredentialsMsg;
       }
       if (response?.statusCode == 422) {
-        return 'These credentials do not match our records.';
+        return tr.invalidCredentialsMsg;
       }
       if (response?.statusCode == 429) {
-        return 'Too many login attempts. Please wait a minute and try again.';
+        return tr.tooManyAttemptsMsg;
       }
       if (response?.statusCode == 500) {
-        return 'Server error. Please try again later.';
+        return tr.serverErrorMsg;
       }
-      return error.message ?? 'An unexpected network error occurred.';
+      return error.message ?? tr.serverErrorMsg;
     }
     return error.toString().replaceFirst('Exception: ', '');
   }
@@ -103,7 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = _parseErrorMessage(e);
+          _errorMessage = _parseErrorMessage(e, context.tr);
         });
       }
     } finally {
@@ -116,6 +117,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showServerSettingsDialog() {
+    final tr = context.tr;
     final client = ref.read(apiClientProvider);
     final storage = ref.read(secureStorageProvider);
     final urlController = TextEditingController(text: client.dio.options.baseUrl);
@@ -123,12 +125,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('API Base URL'),
+        title: Text(tr.apiBaseUrlSetting),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'For Android Emulator use http://10.0.2.2:8000\nFor physical device use your computer\'s local IP.',
+              'Android emulator: http://10.0.2.2:8000\nAppareil physique: http://<LAN-IP>:8000',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 12),
@@ -144,7 +147,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(tr.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -155,7 +158,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               }
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: Text(tr.save),
           ),
         ],
       ),
@@ -164,6 +167,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -179,7 +184,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     alignment: Alignment.topRight,
                     child: IconButton(
                       icon: const Icon(Icons.settings_outlined),
-                      tooltip: 'Server Settings',
+                      tooltip: tr.apiBaseUrlSetting,
                       onPressed: _showServerSettingsDialog,
                     ),
                   ),
@@ -211,20 +216,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Welcome to Akrili',
+                  Text(
+                    tr.welcomeToAkrili,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Short-term rentals across Algeria',
+                  Text(
+                    tr.welcomeSubtitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       color: AppTheme.textSecondaryLight,
                     ),
@@ -252,11 +257,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email or Phone',
-                      prefixIcon: Icon(Icons.person_outline),
+                    decoration: InputDecoration(
+                      labelText: tr.emailOrPhone,
+                      prefixIcon: const Icon(Icons.person_outline),
                     ),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter your email or phone' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? tr.enterEmailOrPhone : null,
                   ),
                   const SizedBox(height: 16),
 
@@ -265,7 +270,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      labelText: 'Password',
+                      labelText: tr.password,
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -278,7 +283,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         },
                       ),
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Enter your password' : null,
+                    validator: (v) => (v == null || v.isEmpty) ? tr.enterPassword : null,
                   ),
                   const SizedBox(height: 24),
 
@@ -294,7 +299,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Log In'),
+                        : Text(tr.logIn),
                   ),
                   const SizedBox(height: 14),
 
@@ -302,12 +307,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Don't have an account?", style: TextStyle(fontSize: 14)),
+                      Text(tr.dontHaveAccount, style: const TextStyle(fontSize: 14)),
                       TextButton(
                         onPressed: () {
                           context.push('/register');
                         },
-                        child: const Text('Sign Up', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(tr.signUp, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -316,7 +321,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   TextButton(
                     onPressed: () => context.go('/explore'),
                     child: Text(
-                      'Continue browsing as Guest',
+                      tr.continueAsGuest,
                       style: TextStyle(
                         fontSize: 13,
                         color: Theme.of(context).brightness == Brightness.dark
@@ -328,14 +333,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 20),
 
                   // Quick test credentials for Paired Review
-                  const Row(
+                  Row(
                     children: [
-                      Expanded(child: Divider()),
+                      const Expanded(child: Divider()),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
-                          'QUICK LOGIN',
-                          style: TextStyle(
+                          tr.quickLogin,
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: Colors.grey,
@@ -343,7 +348,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                       ),
-                      Expanded(child: Divider()),
+                      const Expanded(child: Divider()),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -358,7 +363,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               _errorMessage = null;
                             });
                           },
-                          child: const Text('Guest'),
+                          child: Text(tr.guestBadge),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -371,7 +376,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               _errorMessage = null;
                             });
                           },
-                          child: const Text('Host'),
+                          child: Text(tr.hostBadge),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -384,7 +389,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               _errorMessage = null;
                             });
                           },
-                          child: const Text('Admin'),
+                          child: Text(tr.adminBadge),
                         ),
                       ),
                     ],

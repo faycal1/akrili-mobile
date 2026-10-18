@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
 import '../../providers/auth_provider.dart';
@@ -13,11 +14,12 @@ class FavoritesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tr = context.tr;
     final authUser = ref.watch(authNotifierProvider).valueOrNull;
 
     if (authUser == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Saved Stays')),
+        appBar: AppBar(title: Text(tr.savedStaysTitle)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(28.0),
@@ -34,18 +36,22 @@ class FavoritesScreen extends ConsumerWidget {
                   child: const Icon(Icons.favorite_outline_rounded, size: 36, color: AppTheme.secondary),
                 ),
                 const SizedBox(height: 16),
-                const Text('Sign in to view Saved Stays', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(tr.signInToViewFavorites, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                const Text('Save and organize your favorite stays to plan your upcoming visits and compare options.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(
+                  tr.favoritesSignInPrompt,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () => context.push('/login'),
-                  child: const Text('Sign In'),
+                  child: Text(tr.signIn),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => context.push('/register'),
-                  child: const Text('Create an Account'),
+                  child: Text(tr.createAccount),
                 ),
               ],
             ),
@@ -58,11 +64,11 @@ class FavoritesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Saved Stays'),
+        title: Text(tr.savedStaysTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
+            tooltip: tr.retry,
             onPressed: () => ref.refresh(favoritesListProvider),
           ),
         ],
@@ -78,7 +84,7 @@ class FavoritesScreen extends ConsumerWidget {
                 const Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.secondary),
                 const SizedBox(height: 12),
                 Text(
-                  'Failed to load favorites',
+                  'Impossible de charger les favoris',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 4),
@@ -90,7 +96,7 @@ class FavoritesScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 OutlinedButton(
                   onPressed: () => ref.refresh(favoritesListProvider),
-                  child: const Text('Try Again'),
+                  child: Text(tr.retry),
                 ),
               ],
             ),
@@ -117,13 +123,13 @@ class FavoritesScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text(
-                      'No saved stays yet',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Text(
+                      tr.noFavoritesYet,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Tap the heart icon on any rental in Algeria to save it to your wishlist.',
+                      'Appuyez sur le cœur d\'une annonce en Algérie pour l\'ajouter à votre liste de favoris.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey, fontSize: 13),
                     ),
@@ -133,7 +139,7 @@ class FavoritesScreen extends ConsumerWidget {
                         context.go('/explore');
                       },
                       icon: const Icon(Icons.search_rounded),
-                      label: const Text('Explore properties'),
+                      label: Text(tr.navExplore),
                     ),
                   ],
                 ),
@@ -167,6 +173,8 @@ class _FavoritePropertyCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tr = context.tr;
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -193,7 +201,7 @@ class _FavoritePropertyCard extends ConsumerWidget {
                     elevation: 2,
                     child: IconButton(
                       icon: const Icon(Icons.favorite_rounded, color: AppTheme.secondary, size: 20),
-                      tooltip: 'Remove from favorites',
+                      tooltip: 'Retirer des favoris',
                       onPressed: () async {
                         try {
                           await ref
@@ -203,7 +211,7 @@ class _FavoritePropertyCard extends ConsumerWidget {
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Could not update favorite: $e')),
+                              SnackBar(content: Text('Erreur: $e')),
                             );
                           }
                         }
@@ -221,14 +229,14 @@ class _FavoritePropertyCard extends ConsumerWidget {
                         color: Colors.black.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.flash_on_rounded, size: 12, color: Colors.amber),
-                          SizedBox(width: 4),
+                          const Icon(Icons.flash_on_rounded, size: 12, color: Colors.amber),
+                          const SizedBox(width: 4),
                           Text(
-                            'Instant Book',
-                            style: TextStyle(
+                            tr.instantBookingBadge,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -280,7 +288,7 @@ class _FavoritePropertyCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${property.capacity} guests • ${property.bedrooms} beds • ${property.bathrooms} baths',
+                    '${property.capacity} ${tr.guestsUnit} • ${property.bedrooms} ${tr.bedroomsUnit} • ${property.bathrooms} ${tr.bathroomsUnit}',
                     style: const TextStyle(fontSize: 12, color: AppTheme.textSecondaryLight),
                   ),
                   const SizedBox(height: 10),
@@ -298,22 +306,22 @@ class _FavoritePropertyCard extends ConsumerWidget {
                                 color: AppTheme.primary,
                               ),
                             ),
-                            const TextSpan(
-                              text: '/ night',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                            TextSpan(
+                              text: '/ ${tr.nightsUnit.replaceAll("s", "")}',
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
                             ),
                           ],
                         ),
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          context.push('/properties/${property.id}/book');
+                          context.push('/properties/${property.id}');
                         },
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(80, 36),
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                         ),
-                        child: const Text('Book', style: TextStyle(fontSize: 13)),
+                        child: Text(tr.viewDetails, style: const TextStyle(fontSize: 13)),
                       ),
                     ],
                   ),

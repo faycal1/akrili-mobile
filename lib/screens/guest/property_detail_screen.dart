@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
 import '../../providers/favorite_provider.dart';
@@ -13,6 +14,7 @@ class PropertyDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tr = context.tr;
     final propertyAsync = ref.watch(propertyDetailProvider(propertyId));
 
     return Scaffold(
@@ -22,10 +24,11 @@ class PropertyDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Error loading property: $err'),
+              Text('Erreur de chargement : $err'),
+              const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () => ref.invalidate(propertyDetailProvider(propertyId)),
-                child: const Text('Retry'),
+                child: Text(tr.retry),
               ),
             ],
           ),
@@ -49,6 +52,7 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final property = widget.property;
     final images = [
       if (property.coverUrl != null) property.coverUrl!,
@@ -98,32 +102,28 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                             onPageChanged: (i) => setState(() => _currentImageIndex = i),
                             itemBuilder: (ctx, idx) => AkriliImage(
                               imageUrl: images[idx],
-                              fit: BoxFit.cover,
+                              height: 300,
                               width: double.infinity,
                             ),
                           ),
-                          if (images.length > 1)
-                            Positioned(
-                              bottom: 12,
-                              right: 12,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  '${_currentImageIndex + 1}/${images.length}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                                ),
+                          Positioned(
+                            bottom: 16,
+                            right: 16,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.65),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${_currentImageIndex + 1} / ${images.length}',
+                                style: const TextStyle(color: Colors.white, fontSize: 12),
                               ),
                             ),
+                          ),
                         ],
                       )
-                    : Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.home_work_outlined, size: 64),
-                      ),
+                    : Container(color: Colors.grey[200]),
               ),
             ),
 
@@ -134,45 +134,38 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Title and Location
                     Text(
                       property.title,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined, size: 18, color: Colors.grey),
+                        const Icon(Icons.location_on, size: 16, color: AppTheme.primary),
                         const SizedBox(width: 4),
                         Text(
-                          '${property.commune?.name ?? ""}, ${property.wilaya?.name ?? "Algeria"}',
+                          '${property.commune?.name ?? ""}, ${property.wilaya?.name ?? "Algérie"}',
                           style: const TextStyle(color: Colors.grey, fontSize: 14),
                         ),
-                        const Spacer(),
-                        if (property.averageRating != null) ...[
-                          const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
-                          const SizedBox(width: 4),
-                          Text(
-                            property.averageRating!.toStringAsFixed(1),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                          ),
-                          Text(
-                            ' (${property.reviewsCount})',
-                            style: const TextStyle(color: Colors.grey, fontSize: 13),
-                          ),
-                        ],
                       ],
                     ),
+
                     const SizedBox(height: 16),
                     const Divider(),
                     const SizedBox(height: 16),
 
-                    // Specs row
+                    // Property Specs
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _SpecItem(icon: Icons.people_outline, label: '${property.capacity} guests'),
-                        _SpecItem(icon: Icons.bedroom_parent_outlined, label: '${property.bedrooms} bedrooms'),
-                        _SpecItem(icon: Icons.bathtub_outlined, label: '${property.bathrooms} baths'),
+                        _SpecItem(icon: Icons.people_outline, label: '${property.capacity} ${tr.guestsUnit}'),
+                        _SpecItem(icon: Icons.bedroom_parent_outlined, label: '${property.bedrooms} ${tr.bedroomsUnit}'),
+                        _SpecItem(icon: Icons.bathtub_outlined, label: '${property.bathrooms} ${tr.bathroomsUnit}'),
                         _SpecItem(icon: Icons.home_outlined, label: property.type),
                       ],
                     ),
@@ -202,7 +195,7 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Hosted by ${property.owner!.name}',
+                                'Hôte : ${property.owner!.name}',
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                               ),
                               if (property.owner!.isVerified)
@@ -210,7 +203,7 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                                   children: [
                                     Icon(Icons.verified, color: AppTheme.primary, size: 14),
                                     SizedBox(width: 4),
-                                    Text('Verified Host', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                    Text('Hôte vérifié', style: TextStyle(fontSize: 12, color: Colors.grey)),
                                   ],
                                 ),
                             ],
@@ -225,7 +218,7 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                     // Description
                     if (property.description != null && property.description!.isNotEmpty) ...[
                       const Text(
-                        'About this space',
+                        'À propos de ce logement',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
@@ -241,7 +234,7 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                     // Amenities
                     if (property.amenities.isNotEmpty) ...[
                       const Text(
-                        'What this place offers',
+                        'Équipements inclus',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 12),
@@ -263,17 +256,17 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                     ],
 
                     // Pricing breakdown summary
-                    const Text(
-                      'Pricing Details',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Text(
+                      tr.priceSummary,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
-                    _PriceRow(label: 'Nightly Rate', amount: '${property.nightlyPrice} DZD'),
+                    _PriceRow(label: tr.nightlyPriceRow, amount: '${property.nightlyPrice} DZD'),
                     if (property.cleaningFee > 0)
-                      _PriceRow(label: 'Cleaning Fee', amount: '${property.cleaningFee} DZD'),
+                      _PriceRow(label: tr.cleaningFeeRow, amount: '${property.cleaningFee} DZD'),
                     if (property.deposit > 0)
-                      _PriceRow(label: 'Security Deposit', amount: '${property.deposit} DZD'),
-                    _PriceRow(label: 'Minimum Stay', amount: '${property.minNights} night(s)'),
+                      _PriceRow(label: tr.depositRow, amount: '${property.deposit} DZD'),
+                    _PriceRow(label: tr.minNightsLabel, amount: '${property.minNights} ${tr.nightsUnit}'),
 
                     const SizedBox(height: 100), // bottom padding for CTA bar
                   ],
@@ -291,7 +284,7 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.06),
@@ -316,7 +309,7 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                         ),
                       ),
                       const Text(
-                        'per night',
+                        'par nuit',
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     ],
@@ -329,7 +322,7 @@ class _DetailContentState extends ConsumerState<_DetailContent> {
                     onPressed: () {
                       context.push('/properties/${property.id}/book');
                     },
-                    child: Text(property.instantBooking ? 'Instant Book' : 'Reserve Stay'),
+                    child: Text(property.instantBooking ? 'Réservation instantanée' : 'Réserver ce séjour'),
                   ),
                 ],
               ),

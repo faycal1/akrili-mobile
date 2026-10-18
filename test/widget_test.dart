@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:akrili/core/api/api_client.dart';
+import 'package:akrili/core/localization/app_localizations.dart';
 import 'package:akrili/data/models/user_model.dart';
 import 'package:akrili/data/models/property_model.dart';
 import 'package:akrili/data/models/booking_model.dart';
@@ -88,7 +90,7 @@ void main() {
         },
       });
 
-      expect(notification.title, equals('Booking Requested'));
+      expect(notification.title, equals('Demande de réservation'));
       expect(notification.deepLinkType, equals('booking'));
       expect(notification.deepLinkId, equals('42'));
     });
@@ -185,6 +187,30 @@ void main() {
       expect(clearedWilaya.wilayaId, isNull);
       expect(clearedWilaya.wilayaName, isNull);
       expect(clearedWilaya.search, equals('villa'));
+    });
+
+    test('AppLocalizations defaults to French and provides correct translations', () {
+      final frLoc = AppLocalizations(const Locale('fr'));
+      expect(frLoc.languageCode, equals('fr'));
+      expect(frLoc.navExplore, equals('Explorer'));
+      expect(frLoc.navBookings, equals('Réservations'));
+      expect(frLoc.navFavorites, equals('Favoris'));
+      expect(frLoc.navProfile, equals('Profil'));
+      expect(frLoc.perNightLabel, equals('DZD / nuit'));
+      expect(frLoc.confirmAndBook, equals('Confirmer et réserver'));
+
+      final arLoc = AppLocalizations(const Locale('ar'));
+      expect(arLoc.navExplore, equals('استكشاف'));
+      expect(arLoc.navBookings, equals('حجوزاتي'));
+
+      final enLoc = AppLocalizations(const Locale('en'));
+      expect(enLoc.navExplore, equals('Explore'));
+      expect(enLoc.navBookings, equals('Bookings'));
+
+      // Unknown locale falls back to French
+      final deLoc = AppLocalizations(const Locale('de'));
+      expect(deLoc.navExplore, equals('Explorer'));
+      expect(deLoc.navBookings, equals('Réservations'));
     });
   });
 }

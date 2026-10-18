@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/booking_provider.dart';
 import 'widgets/akrili_image.dart';
@@ -58,21 +59,39 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     }
   }
 
+  String _statusLocalized(String status, AppLocalizations tr) {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        return tr.statusConfirmed;
+      case 'pending':
+        return tr.statusPending;
+      case 'rejected':
+        return tr.statusRejected;
+      case 'cancelled':
+        return tr.statusCancelled;
+      case 'completed':
+        return tr.statusCompleted;
+      default:
+        return status;
+    }
+  }
+
   Future<void> _handleAccept() async {
+    final tr = context.tr;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Accept Booking?'),
-        content: const Text('Confirm this booking reservation? The guest will be notified instantly.'),
+        title: Text(tr.acceptBtn),
+        content: const Text('Confirmer cette réservation ? Le voyageur en sera immédiatement informé.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(tr.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-            child: const Text('Accept Booking'),
+            child: Text(tr.acceptBtn),
           ),
         ],
       ),
@@ -89,13 +108,13 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       ref.invalidate(guestBookingsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reservation accepted successfully!')),
+          SnackBar(content: Text(tr.bookingAcceptedSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString().replaceFirst("Exception: ", "")}')),
+          SnackBar(content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}')),
         );
       }
     } finally {
@@ -104,25 +123,26 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   }
 
   Future<void> _handleReject() async {
+    final tr = context.tr;
     final reasonController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Decline Booking?'),
+        title: const Text('Refuser la réservation ?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Please provide a brief reason for declining (optional):',
+              'Veuillez indiquer un motif de refus (optionnel) :',
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: reasonController,
               decoration: const InputDecoration(
-                labelText: 'Reason',
-                hintText: 'e.g., Dates no longer available',
+                labelText: 'Motif',
+                hintText: 'ex. Dates indisponibles',
               ),
               maxLines: 2,
             ),
@@ -131,12 +151,12 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(tr.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondary),
-            child: const Text('Decline Booking'),
+            child: Text(tr.rejectBtn),
           ),
         ],
       ),
@@ -153,13 +173,13 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       ref.invalidate(guestBookingsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reservation declined.')),
+          SnackBar(content: Text(tr.bookingRejectedSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString().replaceFirst("Exception: ", "")}')),
+          SnackBar(content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}')),
         );
       }
     } finally {
@@ -168,10 +188,11 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   }
 
   Future<void> _handleSubmitReview() async {
+    final tr = context.tr;
     final comment = _reviewController.text.trim();
     if (comment.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please write a short comment about your stay.')),
+        const SnackBar(content: Text('Veuillez laisser un court commentaire sur votre séjour.')),
       );
       return;
     }
@@ -187,13 +208,13 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       ref.invalidate(bookingDetailProvider(widget.id));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thank you! Your review has been submitted.')),
+          SnackBar(content: Text(tr.reviewSubmittedSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString().replaceFirst("Exception: ", "")}')),
+          SnackBar(content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}')),
         );
       }
     } finally {
@@ -203,15 +224,16 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final bookingAsync = ref.watch(bookingDetailProvider(widget.id));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Booking Details'),
+        title: Text(tr.bookingDetailsTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
+            tooltip: tr.retry,
             onPressed: () => ref.refresh(bookingDetailProvider(widget.id)),
           ),
         ],
@@ -226,7 +248,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
               children: [
                 const Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.secondary),
                 const SizedBox(height: 12),
-                Text('Could not load booking', style: Theme.of(context).textTheme.titleMedium),
+                Text('Impossible de charger la réservation', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 4),
                 Text(
                   err.toString().replaceFirst('Exception: ', ''),
@@ -236,7 +258,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 const SizedBox(height: 16),
                 OutlinedButton(
                   onPressed: () => ref.refresh(bookingDetailProvider(widget.id)),
-                  child: const Text('Retry'),
+                  child: Text(tr.retry),
                 ),
               ],
             ),
@@ -277,7 +299,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              booking.status.toUpperCase(),
+                              _statusLocalized(booking.status, tr).toUpperCase(),
                               style: TextStyle(
                                 color: statusColor,
                                 fontWeight: FontWeight.bold,
@@ -288,12 +310,12 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                             const SizedBox(height: 2),
                             Text(
                               booking.isPending
-                                  ? 'Awaiting host confirmation'
+                                  ? 'En attente de confirmation de l\'hôte'
                                   : booking.isConfirmed
-                                      ? 'Reservation confirmed & active'
+                                      ? 'Réservation confirmée et active'
                                       : booking.isRejected
-                                          ? 'Reservation declined'
-                                          : 'Reservation ${booking.status}',
+                                          ? 'Réservation refusée'
+                                          : 'Réservation ${_statusLocalized(booking.status, tr)}',
                               style: const TextStyle(fontSize: 12, color: Colors.black87),
                             ),
                           ],
@@ -308,8 +330,9 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -317,7 +340,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('REFERENCE', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                          Text(tr.referenceLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 2),
                           Text(
                             booking.reference.isNotEmpty ? booking.reference : '#${booking.id}',
@@ -329,10 +352,10 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            const Text('BOOKED ON', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                            Text(tr.bookedOnLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 2),
                             Text(
-                              DateFormat('MMM d, yyyy').format(booking.createdAt!),
+                              DateFormat('dd/MM/yyyy').format(booking.createdAt!),
                               style: const TextStyle(fontSize: 13),
                             ),
                           ],
@@ -376,9 +399,9 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                                     style: const TextStyle(color: Colors.grey, fontSize: 13),
                                   ),
                                   const SizedBox(height: 4),
-                                  const Text(
-                                    'View Listing ›',
-                                    style: TextStyle(
+                                  Text(
+                                    '${tr.viewListingBtn} ›',
+                                    style: const TextStyle(
                                       color: AppTheme.primary,
                                       fontWeight: FontWeight.w600,
                                       fontSize: 12,
@@ -402,7 +425,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Reservation Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(tr.reservationDetails, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 14),
                         Row(
                           children: [
@@ -410,7 +433,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('CHECK-IN', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                  Text(tr.checkInLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 4),
                                   Text(booking.checkIn, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                                 ],
@@ -420,7 +443,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('CHECK-OUT', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                  Text(tr.checkOutLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 4),
                                   Text(booking.checkOut, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                                 ],
@@ -434,16 +457,16 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Duration', style: TextStyle(color: Colors.grey)),
-                            Text('$nights night${nights > 1 ? "s" : ""}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text(tr.durationLabel, style: const TextStyle(color: Colors.grey)),
+                            Text('$nights ${tr.nightsUnit}', style: const TextStyle(fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Guests', style: TextStyle(color: Colors.grey)),
-                            Text('${booking.guests} guest${booking.guests > 1 ? "s" : ""}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text(tr.minGuestsLabel, style: const TextStyle(color: Colors.grey)),
+                            Text('${booking.guests} ${tr.guestsUnit}', style: const TextStyle(fontWeight: FontWeight.w600)),
                           ],
                         ),
                         if (booking.tenant != null) ...[
@@ -451,7 +474,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Tenant', style: TextStyle(color: Colors.grey)),
+                              Text(tr.tenantField, style: const TextStyle(color: Colors.grey)),
                               Text(booking.tenant!.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                             ],
                           ),
@@ -469,12 +492,12 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Price Summary', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(tr.priceSummary, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Total (DZD)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            Text(tr.totalLabel, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                             Text(
                               '${NumberFormat("#,###").format(booking.totalPrice)} DZD',
                               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.primary),
@@ -503,12 +526,12 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                           children: [
                             Icon(Icons.gavel_rounded, color: Colors.amber, size: 22),
                             SizedBox(width: 8),
-                            Text('Host Decision Required', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text('Décision requise de l\'hôte', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                           ],
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Review this reservation and accept or decline the guest request.',
+                          'Examinez cette réservation et acceptez ou refusez la demande du voyageur.',
                           style: TextStyle(fontSize: 12, color: Colors.black87),
                         ),
                         const SizedBox(height: 14),
@@ -524,7 +547,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                                     foregroundColor: AppTheme.secondary,
                                     side: const BorderSide(color: AppTheme.secondary),
                                   ),
-                                  child: const Text('Decline'),
+                                  child: Text(tr.rejectBtn),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -532,7 +555,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                                 child: ElevatedButton(
                                   onPressed: _handleAccept,
                                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-                                  child: const Text('Accept'),
+                                  child: Text(tr.acceptBtn),
                                 ),
                               ),
                             ],
@@ -551,10 +574,10 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text('Rate your experience', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(tr.leaveReviewBtn, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           const SizedBox(height: 6),
                           const Text(
-                            'How was your stay? Your feedback helps the Algerian host community.',
+                            'Comment s\'est passé votre séjour ? Votre avis aide la communauté Akrili.',
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                           const SizedBox(height: 12),
@@ -581,8 +604,8 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                           TextField(
                             controller: _reviewController,
                             decoration: const InputDecoration(
-                              labelText: 'Your Review',
-                              hintText: 'Describe cleanliness, location, hospitality...',
+                              labelText: 'Votre avis',
+                              hintText: 'Propreté, emplacement, accueil de l\'hôte...',
                             ),
                             maxLines: 3,
                           ),
@@ -595,7 +618,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                                     height: 20,
                                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                   )
-                                : const Text('Submit Review'),
+                                : const Text('Publier l\'avis'),
                           ),
                         ],
                       ),

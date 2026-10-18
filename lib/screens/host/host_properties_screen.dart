@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
 import '../../providers/property_provider.dart';
@@ -12,6 +13,7 @@ class HostPropertiesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tr = context.tr;
     final propertiesAsync = ref.watch(hostPropertiesProvider);
 
     return Scaffold(
@@ -27,13 +29,13 @@ class HostPropertiesScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 10),
-            const Text('Host Dashboard'),
+            Text(tr.navListings),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
+            tooltip: tr.retry,
             onPressed: () => ref.refresh(hostPropertiesProvider),
           ),
         ],
@@ -49,7 +51,7 @@ class HostPropertiesScreen extends ConsumerWidget {
                 const Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.secondary),
                 const SizedBox(height: 12),
                 Text(
-                  'Failed to load properties',
+                  'Impossible de charger les biens',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 4),
@@ -61,7 +63,7 @@ class HostPropertiesScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 OutlinedButton(
                   onPressed: () => ref.refresh(hostPropertiesProvider),
-                  child: const Text('Try Again'),
+                  child: Text(tr.retry),
                 ),
               ],
             ),
@@ -89,12 +91,13 @@ class HostPropertiesScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      'No properties listed yet',
+                      'Aucune annonce publiée pour le moment',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Your short-term rental listings will appear here once published from the Akrili host portal.',
+                      'Vos annonces de location courte durée apparaîtront ici une fois créées sur la plateforme Akrili.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey, fontSize: 13),
                     ),
@@ -130,6 +133,7 @@ class _HostPropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final isPublished = property.status == 'published' || property.status == 'active';
 
     return Card(
@@ -167,7 +171,7 @@ class _HostPropertyCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            isPublished ? 'ACTIVE' : property.status.toUpperCase(),
+                            isPublished ? 'ACTIF' : property.status.toUpperCase(),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -176,10 +180,10 @@ class _HostPropertyCard extends StatelessWidget {
                           ),
                         ),
                         if (property.instantBooking)
-                          const Row(
+                          Row(
                             children: [
-                              Icon(Icons.flash_on_rounded, size: 12, color: Colors.amber),
-                              Text('Instant', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber)),
+                              const Icon(Icons.flash_on_rounded, size: 12, color: Colors.amber),
+                              Text(tr.instantBookingBadge, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber)),
                             ],
                           ),
                       ],
@@ -201,7 +205,7 @@ class _HostPropertyCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${property.capacity} guests • ${property.bedrooms} beds',
+                          '${property.capacity} ${tr.guestsUnit} • ${property.bedrooms} ${tr.bedroomsUnit}',
                           style: const TextStyle(fontSize: 12, color: AppTheme.textSecondaryLight),
                         ),
                         Text(

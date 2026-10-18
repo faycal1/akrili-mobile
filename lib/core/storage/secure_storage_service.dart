@@ -14,6 +14,15 @@ class SecureStorageService {
   static const String _keyUserJson = 'auth_user_json';
   static const String _keyActiveRole = 'active_app_role';
   static const String _keyCustomBaseUrl = 'custom_base_url';
+  static const String _keyLocale = 'app_locale';
+
+  Future<void> saveLocale(String locale) async {
+    await _storage.write(key: _keyLocale, value: locale);
+  }
+
+  Future<String?> getLocale() async {
+    return await _storage.read(key: _keyLocale);
+  }
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: _keyToken, value: token);

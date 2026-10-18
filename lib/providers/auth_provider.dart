@@ -145,7 +145,11 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   }
 
   void handleUnauthorized() {
-    _repository.logout();
+    // Local-only teardown: never call the server here. The token is already
+    // rejected, so hitting /auth/logout or /device-tokens would 401 again and
+    // re-enter this handler, looping. User-initiated logout() still hits the API.
+    _storage.clearAuth();
+    _storage.deleteFcmToken();
     _ref.read(activeRoleModeProvider.notifier).state = 'guest';
     state = const AsyncValue.data(null);
   }

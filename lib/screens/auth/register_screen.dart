@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 
@@ -36,15 +37,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  String _parseErrorMessage(dynamic error) {
+  String _parseErrorMessage(dynamic error, AppLocalizations tr) {
     if (error is DioException) {
       if (error.type == DioExceptionType.connectionTimeout ||
           error.type == DioExceptionType.sendTimeout ||
           error.type == DioExceptionType.receiveTimeout) {
-        return 'Connection timed out. Please check your network or server URL.';
+        return tr.connectionTimeoutMsg;
       }
       if (error.type == DioExceptionType.connectionError) {
-        return 'Cannot connect to server. Check server settings (gear icon top right).';
+        return tr.cannotConnectMsg;
       }
       final response = error.response;
       if (response != null && response.data != null) {
@@ -67,15 +68,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         }
       }
       if (response?.statusCode == 422) {
-        return 'Validation error. Please check your registration details.';
+        return 'Veuillez vérifier les informations saisies.';
       }
       if (response?.statusCode == 429) {
-        return 'Too many registration attempts. Please wait a minute and try again.';
+        return tr.tooManyAttemptsMsg;
       }
       if (response?.statusCode == 500) {
-        return 'Server error. Please try again later.';
+        return tr.serverErrorMsg;
       }
-      return error.message ?? 'An unexpected network error occurred.';
+      return error.message ?? tr.serverErrorMsg;
     }
     return error.toString().replaceFirst('Exception: ', '');
   }
@@ -109,7 +110,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = _parseErrorMessage(e);
+          _errorMessage = _parseErrorMessage(e, context.tr);
         });
       }
     } finally {
@@ -122,6 +123,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   void _showServerSettingsDialog() {
+    final tr = context.tr;
     final client = ref.read(apiClientProvider);
     final storage = ref.read(secureStorageProvider);
     final urlController = TextEditingController(text: client.dio.options.baseUrl);
@@ -129,12 +131,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('API Base URL'),
+        title: Text(tr.apiBaseUrlSetting),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Android Emulator: http://10.0.2.2:8000\nPhysical Device: http://<LAN-IP>:8000',
+              'Android Emulator: http://10.0.2.2:8000\nAppareil physique: http://<LAN-IP>:8000',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 12),
@@ -150,7 +152,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(tr.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -161,7 +163,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               }
               if (context.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: Text(tr.save),
           ),
         ],
       ),
@@ -170,11 +172,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Account'),
+        title: Text(tr.createAccount),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -188,7 +191,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Server Settings',
+            tooltip: tr.apiBaseUrlSetting,
             onPressed: _showServerSettingsDialog,
           ),
         ],
@@ -222,9 +225,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            'Join Akrili',
-                            style: TextStyle(
+                          Text(
+                            tr.joinAkrili,
+                            style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                               letterSpacing: -0.5,
@@ -232,7 +235,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Discover and rent verified stays across all 58 wilayas of Algeria',
+                            tr.joinSubtitle,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 13,
@@ -267,7 +270,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    'Renter / Guest',
+                                    tr.roleRenter,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
@@ -293,7 +296,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    'Host / Owner',
+                                    tr.roleHost,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
@@ -338,17 +341,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     // Full Name Field
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Full Name',
-                        prefixIcon: Icon(Icons.person_outline_rounded),
-                        hintText: 'e.g. Amina Benali',
+                      decoration: InputDecoration(
+                        labelText: tr.fullName,
+                        prefixIcon: const Icon(Icons.person_outline_rounded),
+                        hintText: 'ex. Amina Benali',
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your full name';
+                          return tr.enterFullName;
                         }
                         if (value.trim().length < 2) {
-                          return 'Name must be at least 2 characters';
+                          return 'Le nom doit comporter au moins 2 caractères';
                         }
                         return null;
                       },
@@ -359,17 +362,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email Address',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        hintText: 'name@example.com',
+                      decoration: InputDecoration(
+                        labelText: tr.emailAddress,
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        hintText: 'nom@exemple.com',
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your email';
+                          return tr.enterValidEmail;
                         }
                         if (!value.contains('@') || !value.contains('.')) {
-                          return 'Please enter a valid email address';
+                          return tr.enterValidEmail;
                         }
                         return null;
                       },
@@ -380,9 +383,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone Number (Optional)',
-                        prefixIcon: Icon(Icons.phone_outlined),
+                      decoration: InputDecoration(
+                        labelText: tr.phoneOptional,
+                        prefixIcon: const Icon(Icons.phone_outlined),
                         hintText: '+213 555 12 34 56',
                       ),
                     ),
@@ -393,7 +396,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: tr.password,
                         prefixIcon: const Icon(Icons.lock_outline_rounded),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -408,10 +411,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
+                          return tr.enterPassword;
                         }
                         if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                          return tr.passwordMinLength;
                         }
                         return null;
                       },
@@ -423,7 +426,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirmPassword,
                       decoration: InputDecoration(
-                        labelText: 'Confirm Password',
+                        labelText: tr.confirmPassword,
                         prefixIcon: const Icon(Icons.lock_reset_rounded),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -438,10 +441,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please confirm your password';
+                          return tr.confirmPassword;
                         }
                         if (value != _passwordController.text) {
-                          return 'Passwords do not match';
+                          return tr.passwordsDoNotMatch;
                         }
                         return null;
                       },
@@ -466,9 +469,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              'Create Account',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          : Text(
+                              tr.createAccount,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                     ),
                     const SizedBox(height: 16),
@@ -477,9 +480,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Already have an account?',
-                          style: TextStyle(fontSize: 14),
+                        Text(
+                          tr.alreadyHaveAccount,
+                          style: const TextStyle(fontSize: 14),
                         ),
                         TextButton(
                           onPressed: () {
@@ -489,9 +492,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               context.pushReplacement('/login');
                             }
                           },
-                          child: const Text(
-                            'Sign In',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          child: Text(
+                            tr.signIn,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -501,7 +504,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     TextButton(
                       onPressed: () => context.go('/explore'),
                       child: Text(
-                        'Continue browsing as Guest',
+                        tr.continueAsGuest,
                         style: TextStyle(
                           fontSize: 13,
                           color: isDark ? Colors.grey[400] : Colors.grey[600],

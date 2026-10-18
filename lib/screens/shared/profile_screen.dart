@@ -1,13 +1,105 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/locale_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  void _showLanguageBottomSheet(BuildContext context, WidgetRef ref) {
+    final tr = context.tr;
+    final currentLocale = ref.read(appLocaleProvider);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.35),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    tr.selectLanguageTitle,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: const Text('🇫🇷', style: TextStyle(fontSize: 24)),
+                  title: const Text('Français (Défaut)', style: TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: currentLocale.languageCode == 'fr'
+                      ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary)
+                      : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  selected: currentLocale.languageCode == 'fr',
+                  selectedTileColor: AppTheme.primary.withOpacity(0.08),
+                  onTap: () {
+                    ref.read(appLocaleProvider.notifier).setLocale('fr');
+                    Navigator.pop(ctx);
+                  },
+                ),
+                const SizedBox(height: 4),
+                ListTile(
+                  leading: const Text('🇩🇿', style: TextStyle(fontSize: 24)),
+                  title: const Text('العربية', style: TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: currentLocale.languageCode == 'ar'
+                      ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary)
+                      : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  selected: currentLocale.languageCode == 'ar',
+                  selectedTileColor: AppTheme.primary.withOpacity(0.08),
+                  onTap: () {
+                    ref.read(appLocaleProvider.notifier).setLocale('ar');
+                    Navigator.pop(ctx);
+                  },
+                ),
+                const SizedBox(height: 4),
+                ListTile(
+                  leading: const Text('🇬🇧', style: TextStyle(fontSize: 24)),
+                  title: const Text('English', style: TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: currentLocale.languageCode == 'en'
+                      ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary)
+                      : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  selected: currentLocale.languageCode == 'en',
+                  selectedTileColor: AppTheme.primary.withOpacity(0.08),
+                  onTap: () {
+                    ref.read(appLocaleProvider.notifier).setLocale('en');
+                    Navigator.pop(ctx);
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showServerSettingsDialog(BuildContext context, WidgetRef ref) {
+    final tr = context.tr;
     final client = ref.read(apiClientProvider);
     final storage = ref.read(secureStorageProvider);
     final urlController = TextEditingController(text: client.dio.options.baseUrl);
@@ -15,7 +107,7 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('API Base URL'),
+        title: Text(tr.apiBaseUrlSetting),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +129,7 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(tr.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -48,7 +140,7 @@ class ProfileScreen extends ConsumerWidget {
               }
               if (context.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: Text(tr.save),
           ),
         ],
       ),
@@ -56,20 +148,21 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    final tr = context.tr;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out of Akrili? Push notifications for this device will be disconnected.'),
+        title: Text(tr.confirmSignOutTitle),
+        content: Text(tr.confirmSignOutMsg),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(tr.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondary),
-            child: const Text('Log Out'),
+            child: Text(tr.signOut),
           ),
         ],
       ),
@@ -80,18 +173,33 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
+  String _getLocaleDisplayName(String code) {
+    switch (code) {
+      case 'fr':
+        return 'Français (Défaut)';
+      case 'ar':
+        return 'العربية';
+      case 'en':
+        return 'English';
+      default:
+        return code.toUpperCase();
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
     final activeRole = ref.watch(activeRoleModeProvider);
+    final appLocale = ref.watch(appLocaleProvider);
+    final tr = context.tr;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile & Settings'),
+        title: Text(tr.profileAndSettings),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Server Settings',
+            tooltip: tr.apiBaseUrlSetting,
             onPressed: () => _showServerSettingsDialog(context, ref),
           ),
         ],
@@ -121,15 +229,15 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text(
-                      'Welcome to Akrili',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    Text(
+                      tr.welcomeToAkrili,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Sign in or create an account to view your bookings, save properties, and manage stays.',
+                    Text(
+                      tr.welcomeSubtitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
@@ -142,9 +250,9 @@ class ProfileScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          'Sign In',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        child: Text(
+                          tr.signIn,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -159,19 +267,36 @@ class ProfileScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          'Create Account',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        child: Text(
+                          tr.createAccount,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
                     const SizedBox(height: 32),
-                    ListTile(
-                      leading: const Icon(Icons.settings_outlined),
-                      title: const Text('Server Settings'),
-                      subtitle: Text(ref.watch(apiClientProvider).dio.options.baseUrl),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _showServerSettingsDialog(context, ref),
+                    Card(
+                      child: Column(
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.language_rounded, color: AppTheme.primary),
+                            title: Text(tr.languageSetting),
+                            subtitle: Text(_getLocaleDisplayName(appLocale.languageCode)),
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                            onTap: () => _showLanguageBottomSheet(context, ref),
+                          ),
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(Icons.tune_rounded, color: AppTheme.primary),
+                            title: Text(tr.apiBaseUrlSetting),
+                            subtitle: Text(
+                              ref.watch(apiClientProvider).dio.options.baseUrl,
+                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                            onTap: () => _showServerSettingsDialog(context, ref),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -245,6 +370,13 @@ class ProfileScreen extends ConsumerWidget {
                             Wrap(
                               spacing: 6,
                               children: user.roles.map((r) {
+                                final label = r.toLowerCase() == 'tenant'
+                                    ? tr.guestBadge
+                                    : r.toLowerCase() == 'owner'
+                                        ? tr.hostBadge
+                                        : r.toLowerCase() == 'admin'
+                                            ? tr.adminBadge
+                                            : r.toUpperCase();
                                 return Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
@@ -252,9 +384,9 @@ class ProfileScreen extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    r.toUpperCase(),
+                                    label,
                                     style: const TextStyle(
-                                      fontSize: 10,
+                                      fontSize: 11,
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.primary,
                                     ),
@@ -298,7 +430,7 @@ class ProfileScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isHostMode ? 'Host Mode Active' : 'Guest Mode Active',
+                                isHostMode ? tr.switchToGuestMode : tr.switchToHostMode,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
@@ -308,8 +440,8 @@ class ProfileScreen extends ConsumerWidget {
                               const SizedBox(height: 2),
                               Text(
                                 isHostMode
-                                    ? 'Managing your listings & reservations'
-                                    : 'Browsing & booking rentals in Algeria',
+                                    ? 'Gestion de vos annonces et réservations reçues'
+                                    : 'Explorer et réserver des séjours en Algérie',
                                 style: const TextStyle(fontSize: 12, color: Colors.grey),
                               ),
                             ],
@@ -339,8 +471,16 @@ class ProfileScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       ListTile(
+                        leading: const Icon(Icons.language_rounded, color: AppTheme.primary),
+                        title: Text(tr.languageSetting),
+                        subtitle: Text(_getLocaleDisplayName(appLocale.languageCode)),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => _showLanguageBottomSheet(context, ref),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
                         leading: const Icon(Icons.tune_rounded, color: AppTheme.primary),
-                        title: const Text('API Connection Settings'),
+                        title: Text(tr.apiBaseUrlSetting),
                         subtitle: Text(
                           ref.watch(apiClientProvider).dio.options.baseUrl,
                           style: const TextStyle(fontSize: 11, color: Colors.grey),
@@ -350,17 +490,9 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       const Divider(height: 1),
                       ListTile(
-                        leading: const Icon(Icons.language_rounded, color: AppTheme.primary),
-                        title: const Text('Language / Locale'),
-                        subtitle: Text('Default: ${user.locale.toUpperCase()}'),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () {},
-                      ),
-                      const Divider(height: 1),
-                      ListTile(
                         leading: const Icon(Icons.privacy_tip_outlined, color: AppTheme.primary),
-                        title: const Text('Privacy & Security'),
-                        subtitle: const Text('Device push notifications active'),
+                        title: const Text('Confidentialité & Notifications'),
+                        subtitle: const Text('Notifications push actives pour cet appareil'),
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () {},
                       ),
@@ -379,14 +511,14 @@ class ProfileScreen extends ConsumerWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   icon: const Icon(Icons.logout_rounded),
-                  label: const Text('Log Out of Akrili'),
+                  label: Text(tr.signOut),
                 ),
                 const SizedBox(height: 20),
 
                 // App version note
                 const Center(
                   child: Text(
-                    'Akrili Mobile v1.0.0 (Phase 4)\nAlgeria Short-Term Rentals',
+                    'Akrili Mobile v1.0.0 (Phase 4)\nLocations de courte durée en Algérie',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 11, color: Colors.grey),
                   ),

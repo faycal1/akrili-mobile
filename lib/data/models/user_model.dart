@@ -29,7 +29,7 @@ class UserModel {
       name: json['name'] as String? ?? 'User',
       email: json['email'] as String?,
       phone: json['phone'] as String?,
-      locale: json['locale'] as String? ?? 'en',
+      locale: json['locale'] as String? ?? 'fr',
       roles: (json['roles'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/booking_provider.dart';
 import '../../providers/property_provider.dart';
@@ -23,7 +24,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
   String? _errorMessage;
 
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
-  final DateFormat _displayFormat = DateFormat('EEE, MMM d, yyyy');
+  final DateFormat _displayFormat = DateFormat('dd/MM/yyyy');
 
   int get _nights => _checkOut.difference(_checkIn).inDays;
 
@@ -59,6 +60,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
   }
 
   Future<void> _submitBooking(int nightlyPrice, int cleaningFee) async {
+    final tr = context.tr;
     setState(() {
       _isSubmitting = true;
       _errorMessage = null;
@@ -77,7 +79,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Booking request created successfully!')),
+          SnackBar(content: Text(tr.bookingCreatedSuccess)),
         );
         context.pushReplacement('/bookings/${booking.id}');
       }
@@ -96,15 +98,25 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final propertyAsync = ref.watch(propertyDetailProvider(widget.propertyId));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Confirm & Book'),
+        title: Text(tr.confirmAndBook),
       ),
       body: propertyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error: $err')),
+        error: (err, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.secondary),
+              const SizedBox(height: 12),
+              Text('${tr.retry}: $err'),
+            ],
+          ),
+        ),
         data: (property) {
           final totalNights = _nights > 0 ? _nights : 1;
           final nightsTotal = totalNights * property.nightlyPrice;
@@ -142,7 +154,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${property.nightlyPrice} DZD / night',
+                            '${property.nightlyPrice} ${tr.perNightLabel}',
                             style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary),
                           ),
                         ],
@@ -171,7 +183,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                 ],
 
                 // Dates Card
-                const Text('Dates', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(tr.datesTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -188,7 +200,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('CHECK-IN', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                              Text(tr.checkInLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 4),
                               Text(_displayFormat.format(_checkIn), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                             ],
@@ -210,7 +222,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('CHECK-OUT', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                              Text(tr.checkOutLabel, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 4),
                               Text(_displayFormat.format(_checkOut), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                             ],
@@ -224,7 +236,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                 const SizedBox(height: 20),
 
                 // Guests Selector
-                const Text('Guests', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(tr.guestsTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -235,7 +247,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('$_guests Guest${_guests > 1 ? "s" : ""} (Max: ${property.capacity})',
+                      Text('$_guests ${tr.guestsUnit} (Max: ${property.capacity})',
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                       Row(
                         children: [
@@ -259,20 +271,20 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                 const SizedBox(height: 20),
 
                 // Price Breakdown
-                const Text('Price Breakdown', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(tr.priceBreakdown, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 _PriceLine(
-                  label: '${property.nightlyPrice} DZD × $totalNights night${totalNights > 1 ? "s" : ""}',
+                  label: '${property.nightlyPrice} DZD × $totalNights ${tr.nightsUnit}',
                   value: '$nightsTotal DZD',
                 ),
                 if (property.cleaningFee > 0)
                   _PriceLine(
-                    label: 'Cleaning fee',
+                    label: tr.cleaningFeeRow,
                     value: '${property.cleaningFee} DZD',
                   ),
                 const Divider(height: 24),
                 _PriceLine(
-                  label: 'Total (DZD)',
+                  label: tr.totalLabel,
                   value: '$grandTotal DZD',
                   isBold: true,
                 ),
@@ -287,7 +299,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                           height: 22,
                           child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                         )
-                      : Text(property.instantBooking ? 'Confirm & Book' : 'Request to Book'),
+                      : Text(property.instantBooking ? tr.confirmAndBook : tr.requestToBook),
                 ),
               ],
             ),

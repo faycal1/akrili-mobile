@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/booking_model.dart';
 import '../../providers/auth_provider.dart';
@@ -20,11 +21,12 @@ class _GuestBookingsScreenState extends ConsumerState<GuestBookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final authUser = ref.watch(authNotifierProvider).valueOrNull;
 
     if (authUser == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('My Bookings')),
+        appBar: AppBar(title: Text(tr.myBookingsTitle)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(28.0),
@@ -41,18 +43,22 @@ class _GuestBookingsScreenState extends ConsumerState<GuestBookingsScreen> {
                   child: const Icon(Icons.calendar_month_outlined, size: 36, color: AppTheme.primary),
                 ),
                 const SizedBox(height: 16),
-                const Text('Sign in to view Bookings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(tr.signInToViewBookings, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                const Text('Keep track of your stay reservations, confirmation status, and host reviews in one place.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(
+                  tr.bookingsSignInPrompt,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () => context.push('/login'),
-                  child: const Text('Sign In'),
+                  child: Text(tr.signIn),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => context.push('/register'),
-                  child: const Text('Create an Account'),
+                  child: Text(tr.createAccount),
                 ),
               ],
             ),
@@ -65,7 +71,7 @@ class _GuestBookingsScreenState extends ConsumerState<GuestBookingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Bookings'),
+        title: Text(tr.myBookingsTitle),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: SingleChildScrollView(
@@ -73,15 +79,15 @@ class _GuestBookingsScreenState extends ConsumerState<GuestBookingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _buildFilterChip('All', 'all'),
+                _buildFilterChip(tr.seeAll, 'all'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Pending', 'pending'),
+                _buildFilterChip(tr.statusPending, 'pending'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Confirmed', 'confirmed'),
+                _buildFilterChip(tr.statusConfirmed, 'confirmed'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Rejected', 'rejected'),
+                _buildFilterChip(tr.statusRejected, 'rejected'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Completed', 'completed'),
+                _buildFilterChip(tr.statusCompleted, 'completed'),
               ],
             ),
           ),
@@ -98,7 +104,7 @@ class _GuestBookingsScreenState extends ConsumerState<GuestBookingsScreen> {
                 const Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.secondary),
                 const SizedBox(height: 12),
                 Text(
-                  'Failed to load bookings',
+                  'Impossible de charger les réservations',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 4),
@@ -110,7 +116,7 @@ class _GuestBookingsScreenState extends ConsumerState<GuestBookingsScreen> {
                 const SizedBox(height: 16),
                 OutlinedButton(
                   onPressed: () => ref.refresh(guestBookingsProvider),
-                  child: const Text('Try Again'),
+                  child: Text(tr.retry),
                 ),
               ],
             ),
@@ -144,13 +150,14 @@ class _GuestBookingsScreenState extends ConsumerState<GuestBookingsScreen> {
                     const SizedBox(height: 16),
                     Text(
                       _selectedFilter == 'all'
-                          ? 'No bookings yet'
-                          : 'No $_selectedFilter bookings',
+                          ? 'Aucune réservation pour le moment'
+                          : 'Aucune réservation dans cette catégorie',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'When you book stays across Algeria, they will show up here.',
+                      'Lorsque vous réservez des séjours en Algérie, ils apparaîtront ici.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey, fontSize: 13),
                     ),
@@ -235,8 +242,26 @@ class _BookingCard extends StatelessWidget {
     }
   }
 
+  String _statusLocalized(String status, AppLocalizations tr) {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        return tr.statusConfirmed;
+      case 'pending':
+        return tr.statusPending;
+      case 'rejected':
+        return tr.statusRejected;
+      case 'cancelled':
+        return tr.statusCancelled;
+      case 'completed':
+        return tr.statusCompleted;
+      default:
+        return status;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final statusColor = _statusColor(booking.status);
     final property = booking.property;
 
@@ -256,7 +281,7 @@ class _BookingCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Ref: ${booking.reference.isNotEmpty ? booking.reference : "#${booking.id}"}',
+                    'Réf : ${booking.reference.isNotEmpty ? booking.reference : "#${booking.id}"}',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -275,7 +300,7 @@ class _BookingCard extends StatelessWidget {
                         Icon(_statusIcon(booking.status), size: 13, color: statusColor),
                         const SizedBox(width: 4),
                         Text(
-                          booking.status.toUpperCase(),
+                          _statusLocalized(booking.status, tr).toUpperCase(),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -306,7 +331,7 @@ class _BookingCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          property?.title ?? 'Short-Term Rental Stay',
+                          property?.title ?? 'Séjour Akrili',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -342,7 +367,7 @@ class _BookingCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${booking.guests} guest${booking.guests > 1 ? "s" : ""}',
+                    '${booking.guests} ${tr.guestsUnit}',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   Text(

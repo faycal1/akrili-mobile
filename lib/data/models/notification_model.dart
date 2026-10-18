@@ -18,13 +18,13 @@ class NotificationModel {
   String get title {
     switch (type) {
       case 'BookingRequested':
-        return 'Booking Requested';
+        return 'Demande de réservation';
       case 'BookingAccepted':
-        return 'Booking Confirmed';
+        return 'Réservation confirmée';
       case 'BookingRejected':
-        return 'Booking Declined';
+        return 'Réservation refusée';
       case 'MessageReceived':
-        return 'New Message';
+        return 'Nouveau message';
       default:
         return 'Notification';
     }
@@ -33,7 +33,7 @@ class NotificationModel {
   String get message {
     return data['message']?.toString() ??
         data['body']?.toString() ??
-        'You have a new update';
+        'Vous avez une nouvelle mise à jour';
   }
 
   String? get deepLinkType {

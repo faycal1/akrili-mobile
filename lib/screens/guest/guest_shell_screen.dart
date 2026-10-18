@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/notification_provider.dart';
 import '../shared/notifications_screen.dart';
@@ -36,6 +37,7 @@ class _GuestShellScreenState extends ConsumerState<GuestShellScreen> {
   @override
   Widget build(BuildContext context) {
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    final tr = context.tr;
 
     return Scaffold(
       body: IndexedStack(
@@ -50,20 +52,20 @@ class _GuestShellScreenState extends ConsumerState<GuestShellScreen> {
           });
         },
         destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.search_rounded),
-            selectedIcon: Icon(Icons.search_rounded, color: AppTheme.primary),
-            label: 'Explore',
+          NavigationDestination(
+            icon: const Icon(Icons.search_rounded),
+            selectedIcon: const Icon(Icons.search_rounded, color: AppTheme.primary),
+            label: tr.navExplore,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.calendar_today_outlined),
-            selectedIcon: Icon(Icons.calendar_today_rounded, color: AppTheme.primary),
-            label: 'Bookings',
+          NavigationDestination(
+            icon: const Icon(Icons.calendar_today_outlined),
+            selectedIcon: const Icon(Icons.calendar_today_rounded, color: AppTheme.primary),
+            label: tr.navBookings,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.favorite_border_rounded),
-            selectedIcon: Icon(Icons.favorite_rounded, color: AppTheme.secondary),
-            label: 'Favorites',
+          NavigationDestination(
+            icon: const Icon(Icons.favorite_border_rounded),
+            selectedIcon: const Icon(Icons.favorite_rounded, color: AppTheme.secondary),
+            label: tr.navFavorites,
           ),
           NavigationDestination(
             icon: Badge(
@@ -76,15 +78,16 @@ class _GuestShellScreenState extends ConsumerState<GuestShellScreen> {
               label: Text('$unreadCount'),
               child: const Icon(Icons.notifications_rounded, color: AppTheme.primary),
             ),
-            label: 'Inbox',
+            label: tr.navInbox,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded, color: AppTheme.primary),
-            label: 'Profile',
+          NavigationDestination(
+            icon: const Icon(Icons.person_outline_rounded),
+            selectedIcon: const Icon(Icons.person_rounded, color: AppTheme.primary),
+            label: tr.navProfile,
           ),
         ],
       ),
     );
   }
 }
+
