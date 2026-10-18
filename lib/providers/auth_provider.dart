@@ -41,6 +41,11 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   Future<void> checkAuth() async {
     state = const AsyncValue.loading();
     try {
+      final savedUrl = await _storage.getBaseUrl();
+      if (savedUrl != null && savedUrl.trim().isNotEmpty) {
+        _repository.client.updateBaseUrl(savedUrl.trim());
+      }
+
       final isAuth = await _repository.isAuthenticated();
       if (!isAuth) {
         state = const AsyncValue.data(null);
@@ -50,7 +55,7 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
       // Try fetching fresh profile from /api/me
       try {
         final user = await _repository.getMe();
-        _applyRoleMode(user);
+        await _applyRoleMode(user);
         state = AsyncValue.data(user);
         // Register device token on startup if logged in
         FcmService.instance.registerDeviceToken(_repository);
@@ -59,7 +64,7 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         // Fallback to cached profile if offline
         final cached = await _repository.getCachedUser();
         if (cached != null) {
-          _applyRoleMode(cached);
+          await _applyRoleMode(cached);
           state = AsyncValue.data(cached);
         } else {
           state = const AsyncValue.data(null);
@@ -73,10 +78,15 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   Future<void> login(String email, String password) async {
     state = const AsyncValue.loading();
     try {
+      final savedUrl = await _storage.getBaseUrl();
+      if (savedUrl != null && savedUrl.trim().isNotEmpty) {
+        _repository.client.updateBaseUrl(savedUrl.trim());
+      }
+
       await _repository.login(email: email, password: password);
       // Fetch fresh /api/me with roles
       final freshUser = await _repository.getMe();
-      _applyRoleMode(freshUser);
+      await _applyRoleMode(freshUser);
       state = AsyncValue.data(freshUser);
 
       // Register FCM device token
@@ -98,6 +108,11 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   }) async {
     state = const AsyncValue.loading();
     try {
+      final savedUrl = await _storage.getBaseUrl();
+      if (savedUrl != null && savedUrl.trim().isNotEmpty) {
+        _repository.client.updateBaseUrl(savedUrl.trim());
+      }
+
       await _repository.register(
         name: name,
         email: email,
@@ -107,7 +122,7 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         role: role,
       );
       final freshUser = await _repository.getMe();
-      _applyRoleMode(freshUser);
+      await _applyRoleMode(freshUser);
       state = AsyncValue.data(freshUser);
 
       // Register FCM device token

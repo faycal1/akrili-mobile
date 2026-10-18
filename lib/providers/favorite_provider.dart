@@ -9,6 +9,8 @@ final favoriteRepositoryProvider = Provider<FavoriteRepository>((ref) {
 });
 
 final favoritesListProvider = FutureProvider.autoDispose<List<PropertyModel>>((ref) async {
+  final user = ref.watch(authNotifierProvider).valueOrNull;
+  if (user == null) return const [];
   final repo = ref.watch(favoriteRepositoryProvider);
   return await repo.getFavorites();
 });

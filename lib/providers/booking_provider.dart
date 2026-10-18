@@ -9,11 +9,15 @@ final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
 });
 
 final guestBookingsProvider = FutureProvider.autoDispose<List<BookingModel>>((ref) async {
+  final user = ref.watch(authNotifierProvider).valueOrNull;
+  if (user == null) return const [];
   final repo = ref.watch(bookingRepositoryProvider);
   return await repo.getGuestBookings();
 });
 
 final hostBookingsProvider = FutureProvider.autoDispose<List<BookingModel>>((ref) async {
+  final user = ref.watch(authNotifierProvider).valueOrNull;
+  if (user == null || !user.isHost) return const [];
   final repo = ref.watch(bookingRepositoryProvider);
   return await repo.getHostBookings();
 });

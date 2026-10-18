@@ -14,6 +14,8 @@ class AuthRepository {
   })  : _client = client,
         _storage = storage;
 
+  ApiClient get client => _client;
+
   Future<UserModel> login({
     required String email,
     required String password,

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -35,6 +36,50 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
+  String _parseErrorMessage(dynamic error) {
+    if (error is DioException) {
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.sendTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        return 'Connection timed out. Please check your network or server URL.';
+      }
+      if (error.type == DioExceptionType.connectionError) {
+        return 'Cannot connect to server. Check server settings (gear icon top right).';
+      }
+      final response = error.response;
+      if (response != null && response.data != null) {
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          if (data.containsKey('errors') && data['errors'] is Map) {
+            final errorsMap = data['errors'] as Map;
+            if (errorsMap.isNotEmpty) {
+              final firstValue = errorsMap.values.first;
+              if (firstValue is List && firstValue.isNotEmpty) {
+                return firstValue.first.toString();
+              } else if (firstValue is String) {
+                return firstValue;
+              }
+            }
+          }
+          if (data.containsKey('message') && data['message'] is String) {
+            return data['message'] as String;
+          }
+        }
+      }
+      if (response?.statusCode == 422) {
+        return 'Validation error. Please check your registration details.';
+      }
+      if (response?.statusCode == 429) {
+        return 'Too many registration attempts. Please wait a minute and try again.';
+      }
+      if (response?.statusCode == 500) {
+        return 'Server error. Please try again later.';
+      }
+      return error.message ?? 'An unexpected network error occurred.';
+    }
+    return error.toString().replaceFirst('Exception: ', '');
+  }
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -52,11 +97,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
             role: _selectedRole,
           );
-      // Navigation is automatically handled by router redirection on auth change
+
+      if (mounted) {
+        final activeRole = ref.read(activeRoleModeProvider);
+        if (activeRole == 'host') {
+          context.go('/host');
+        } else {
+          context.go('/explore');
+        }
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = _parseErrorMessage(e);
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -428,7 +483,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                         TextButton(
                           onPressed: () {
-                            context.push('/login');
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.pushReplacement('/login');
+                            }
                           },
                           child: const Text(
                             'Sign In',

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,6 +27,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  String _parseErrorMessage(dynamic error) {
+    if (error is DioException) {
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.sendTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        return 'Connection timed out. Please check your network or server URL.';
+      }
+      if (error.type == DioExceptionType.connectionError) {
+        return 'Cannot connect to server. Check server settings (gear icon top right).';
+      }
+      final response = error.response;
+      if (response != null && response.data != null) {
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          if (data.containsKey('errors') && data['errors'] is Map) {
+            final errorsMap = data['errors'] as Map;
+            if (errorsMap.isNotEmpty) {
+              final firstValue = errorsMap.values.first;
+              if (firstValue is List && firstValue.isNotEmpty) {
+                return firstValue.first.toString();
+              } else if (firstValue is String) {
+                return firstValue;
+              }
+            }
+          }
+          if (data.containsKey('message') && data['message'] is String) {
+            return data['message'] as String;
+          }
+        }
+      }
+      if (response?.statusCode == 401) {
+        return 'Invalid email/phone or password.';
+      }
+      if (response?.statusCode == 422) {
+        return 'These credentials do not match our records.';
+      }
+      if (response?.statusCode == 429) {
+        return 'Too many login attempts. Please wait a minute and try again.';
+      }
+      if (response?.statusCode == 500) {
+        return 'Server error. Please try again later.';
+      }
+      return error.message ?? 'An unexpected network error occurred.';
+    }
+    return error.toString().replaceFirst('Exception: ', '');
+  }
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -39,10 +87,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _emailController.text.trim(),
             _passwordController.text,
           );
+
+      if (mounted) {
+        final activeRole = ref.read(activeRoleModeProvider);
+        if (activeRole == 'host') {
+          context.go('/host');
+        } else {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/explore');
+          }
+        }
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = _parseErrorMessage(e);
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -289,8 +352,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            _emailController.text = 'tenant@akrili.test';
-                            _passwordController.text = 'azerty';
+                            setState(() {
+                              _emailController.text = 'tenant@akrili.test';
+                              _passwordController.text = 'azerty';
+                              _errorMessage = null;
+                            });
                           },
                           child: const Text('Guest'),
                         ),
@@ -299,8 +365,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            _emailController.text = 'owner@akrili.test';
-                            _passwordController.text = 'azerty';
+                            setState(() {
+                              _emailController.text = 'owner@akrili.test';
+                              _passwordController.text = 'azerty';
+                              _errorMessage = null;
+                            });
                           },
                           child: const Text('Host'),
                         ),
@@ -309,8 +378,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            _emailController.text = 'admin@akrili.test';
-                            _passwordController.text = 'azerty';
+                            setState(() {
+                              _emailController.text = 'admin@akrili.test';
+                              _passwordController.text = 'azerty';
+                              _errorMessage = null;
+                            });
                           },
                           child: const Text('Admin'),
                         ),

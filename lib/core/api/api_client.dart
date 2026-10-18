@@ -60,7 +60,12 @@ class ApiClient {
             name: 'ApiClient',
           );
 
-          if (error.response?.statusCode == 401) {
+          final path = error.requestOptions.uri.path;
+          final authHeader = error.requestOptions.headers['Authorization']?.toString();
+          final hasAuthHeader = authHeader != null && authHeader.isNotEmpty;
+          final isAuthEndpoint = path.contains('/auth/login') || path.contains('/auth/register');
+
+          if (error.response?.statusCode == 401 && hasAuthHeader && !isAuthEndpoint) {
             onUnauthorized?.call();
           }
 
