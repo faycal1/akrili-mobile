@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/guest/booking_create_screen.dart';
@@ -12,10 +13,68 @@ import '../../screens/shared/conversations_screen.dart';
 
 class RouterNotifier extends ChangeNotifier {
   final Ref _ref;
+  UserModel? _user;
+  String _activeRole = 'guest';
+  bool _isLoading = true;
 
   RouterNotifier(this._ref) {
-    _ref.listen(authNotifierProvider, (_, __) => notifyListeners());
-    _ref.listen(activeRoleModeProvider, (_, __) => notifyListeners());
+    _ref.listen<AsyncValue<UserModel?>>(
+      authNotifierProvider,
+      (previous, next) {
+        _isLoading = next.isLoading;
+        _user = next.valueOrNull;
+        notifyListeners();
+      },
+      fireImmediately: true,
+    );
+    _ref.listen<String>(
+      activeRoleModeProvider,
+      (previous, next) {
+        _activeRole = next;
+        notifyListeners();
+      },
+      fireImmediately: true,
+    );
+  }
+
+  String? redirect(BuildContext context, GoRouterState state) {
+    final isLoggingIn = state.matchedLocation == '/login';
+
+    // Still checking initial auth
+    if (_isLoading) {
+      return null;
+    }
+
+    final isAuthenticated = _user != null;
+
+    // Unauthenticated users must go to login
+    if (!isAuthenticated) {
+      return isLoggingIn ? null : '/login';
+    }
+
+    // If user is already authenticated and visits /login, redirect
+    if (isLoggingIn) {
+      return _activeRole == 'host' ? '/host' : '/explore';
+    }
+
+    // Root location redirection
+    if (state.matchedLocation == '/') {
+      return _activeRole == 'host' ? '/host' : '/explore';
+    }
+
+    // Block non-hosts or guest-mode users from accessing /host routes
+    if (state.matchedLocation.startsWith('/host')) {
+      if (!_user!.isHost || _activeRole != 'host') {
+        return '/explore';
+      }
+    }
+
+    // If active role is host and user visits /explore root, route to /host
+    if (_activeRole == 'host' && state.matchedLocation == '/explore') {
+      return '/host';
+    }
+
+    return null;
   }
 }
 
@@ -32,49 +91,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: rootNavigatorKey,
     refreshListenable: notifier,
     initialLocation: '/',
-    redirect: (context, state) {
-      final authState = ref.read(authNotifierProvider);
-      final activeRole = ref.read(activeRoleModeProvider);
-
-      final isLoggingIn = state.matchedLocation == '/login';
-
-      // Still checking initial auth
-      if (authState.isLoading) {
-        return null;
-      }
-
-      final user = authState.valueOrNull;
-      final isAuthenticated = user != null;
-
-      // Unauthenticated users must go to login
-      if (!isAuthenticated) {
-        return isLoggingIn ? null : '/login';
-      }
-
-      // If user is already authenticated and visits /login, redirect
-      if (isLoggingIn) {
-        return activeRole == 'host' ? '/host' : '/explore';
-      }
-
-      // Root location redirection
-      if (state.matchedLocation == '/') {
-        return activeRole == 'host' ? '/host' : '/explore';
-      }
-
-      // Block non-hosts or guest-mode users from accessing /host routes
-      if (state.matchedLocation.startsWith('/host')) {
-        if (!user.isHost || activeRole != 'host') {
-          return '/explore';
-        }
-      }
-
-      // If active role is host and user visits /explore root, route to /host
-      if (activeRole == 'host' && state.matchedLocation == '/explore') {
-        return '/host';
-      }
-
-      return null;
-    },
+    redirect: notifier.redirect,
     routes: [
       GoRoute(
         path: '/login',
