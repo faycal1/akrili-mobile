@@ -122,6 +122,21 @@ void main() {
         // Test null or empty
         expect(ApiClient.resolveUrl(null), isNull);
         expect(ApiClient.resolveUrl('   '), isNull);
+
+        // Test staging URL resolution (HTTPS, no port 8000)
+        ApiClient.activeBaseUrl = 'https://akrili.fawatirs.com';
+        expect(
+          ApiClient.resolveUrl('http://akrili.test:8000/storage/media/16/image.webp'),
+          equals('https://akrili.fawatirs.com/storage/media/16/image.webp'),
+        );
+        expect(
+          ApiClient.resolveUrl('http://akrili.fawatirs.com/storage/media/16/image.webp'),
+          equals('https://akrili.fawatirs.com/storage/media/16/image.webp'),
+        );
+        expect(
+          ApiClient.resolveUrl('/storage/media/16/image.webp'),
+          equals('https://akrili.fawatirs.com/storage/media/16/image.webp'),
+        );
       } finally {
         ApiClient.activeBaseUrl = old;
       }

@@ -88,8 +88,12 @@ class ApiClient {
   }
 
   void updateBaseUrl(String newUrl) {
-    activeBaseUrl = newUrl;
-    dio.options.baseUrl = newUrl;
+    var cleaned = newUrl.trim();
+    while (cleaned.endsWith('/')) {
+      cleaned = cleaned.substring(0, cleaned.length - 1);
+    }
+    activeBaseUrl = cleaned;
+    dio.options.baseUrl = cleaned;
   }
 
   static String? resolveUrl(String? rawUrl) {
@@ -106,18 +110,28 @@ class ApiClient {
       return baseUri.resolve(trimmed).toString();
     }
 
-    // Remap local/dev hosts (akrili.test, *.test, *.local, localhost, 127.0.0.1, 0.0.0.0) to active Base URL
     final host = uri.host.toLowerCase();
+
+    // If host is staging and scheme is http, upgrade to https
+    if (host == 'akrili.fawatirs.com' && uri.scheme == 'http') {
+      return uri.replace(scheme: 'https').toString();
+    }
+
+    // Remap local/dev hosts (akrili.test, *.test, *.local, localhost, 127.0.0.1, 0.0.0.0) to active Base URL
     if (host == 'akrili.test' ||
         host.endsWith('.test') ||
         host.endsWith('.local') ||
         host == 'localhost' ||
         host == '127.0.0.1' ||
         host == '0.0.0.0') {
-      return uri.replace(
+      return Uri(
         scheme: baseUri.scheme,
+        userInfo: uri.userInfo.isNotEmpty ? uri.userInfo : null,
         host: baseUri.host,
-        port: baseUri.hasPort ? baseUri.port : (uri.hasPort ? uri.port : null),
+        port: baseUri.hasPort ? baseUri.port : null,
+        path: uri.path,
+        query: uri.hasQuery ? uri.query : null,
+        fragment: uri.hasFragment ? uri.fragment : null,
       ).toString();
     }
 

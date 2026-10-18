@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/config/app_config.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
@@ -136,15 +137,43 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Android Emulator: http://10.0.2.2:8000\nAppareil physique: http://<LAN-IP>:8000',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              'Environnements :',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                ActionChip(
+                  avatar: const Icon(Icons.cloud_outlined, size: 16),
+                  label: const Text('Staging'),
+                  onPressed: () {
+                    urlController.text = AppConfig.stagingBaseUrl;
+                  },
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.phone_android_rounded, size: 16),
+                  label: const Text('Émulateur'),
+                  onPressed: () {
+                    urlController.text = AppConfig.localEmulatorBaseUrl;
+                  },
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.laptop_rounded, size: 16),
+                  label: const Text('Localhost'),
+                  onPressed: () {
+                    urlController.text = AppConfig.localDesktopBaseUrl;
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             TextField(
               controller: urlController,
               decoration: const InputDecoration(
                 labelText: 'Base URL',
-                hintText: 'http://10.0.2.2:8000',
+                hintText: AppConfig.stagingBaseUrl,
               ),
             ),
           ],
