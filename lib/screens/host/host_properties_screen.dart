@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
@@ -469,39 +469,50 @@ class _HostPropertyCard extends ConsumerWidget {
       ),
     );
 
-    return Dismissible(
-      key: ValueKey('host-property-${property.id}'),
-      // Horizontal on every card so right-swipe always responds: it edits when
-      // allowed, otherwise it explains why the listing can't be edited.
-      direction: DismissDirection.horizontal,
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          // Swipe right: edit. Only draft/rejected listings are editable.
-          if (_isEditable) {
-            context.push('/host/properties/${property.id}/edit');
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(tr.onlyDraftEditable)),
-            );
+    // Pin the swipe gestures to physical direction regardless of locale:
+    // Dismissible resolves startToEnd/endToStart against text direction, which
+    // flips them under RTL. Forcing LTR here keeps right-swipe = edit and
+    // left-swipe = delete everywhere, while the card itself is restored to the
+    // ambient direction so Arabic content still lays out RTL.
+    final ambientDirection = Directionality.of(context);
+
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Dismissible(
+        key: ValueKey('host-property-${property.id}'),
+        direction: DismissDirection.horizontal,
+        confirmDismiss: (direction) async {
+          if (direction == DismissDirection.startToEnd) {
+            // Swipe right: edit. Only draft/rejected listings are editable.
+            if (_isEditable) {
+              context.push('/host/properties/${property.id}/edit');
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(tr.onlyDraftEditable)),
+              );
+            }
+            return false;
           }
-          return false;
-        }
-        // Swipe left: delete with confirmation.
-        return _confirmAndDelete(context, ref, tr);
-      },
-      background: _buildSwipeBackground(
-        color: _isEditable ? AppTheme.primary : Colors.grey,
-        icon: _isEditable ? Icons.edit_rounded : Icons.lock_outline_rounded,
-        label: tr.edit,
-        alignment: Alignment.centerLeft,
+          // Swipe left: delete with confirmation.
+          return _confirmAndDelete(context, ref, tr);
+        },
+        background: _buildSwipeBackground(
+          color: _isEditable ? AppTheme.primary : Colors.grey,
+          icon: _isEditable ? Icons.edit_rounded : Icons.lock_outline_rounded,
+          label: tr.edit,
+          alignment: Alignment.centerLeft,
+        ),
+        secondaryBackground: _buildSwipeBackground(
+          color: const Color(0xFFEF4444),
+          icon: Icons.delete_rounded,
+          label: tr.delete,
+          alignment: Alignment.centerRight,
+        ),
+        child: Directionality(
+          textDirection: ambientDirection,
+          child: card,
+        ),
       ),
-      secondaryBackground: _buildSwipeBackground(
-        color: const Color(0xFFEF4444),
-        icon: Icons.delete_rounded,
-        label: tr.delete,
-        alignment: Alignment.centerRight,
-      ),
-      child: card,
     );
   }
 
