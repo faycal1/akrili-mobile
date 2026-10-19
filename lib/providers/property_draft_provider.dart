@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../core/api/api_error_helper.dart';
 import '../data/models/property_model.dart';
 import '../data/repositories/property_repository.dart';
 import 'property_provider.dart';
@@ -521,9 +522,11 @@ class PropertyDraftNotifier extends StateNotifier<PropertyDraftState> {
 
       return true;
     } catch (e) {
+      // Surface the backend's actual message (e.g. the failing validation
+      // field on a 422) instead of a generic "DioException ... 422".
       state = state.copyWith(
         submitStage: SubmitStage.error,
-        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+        errorMessage: ApiErrorHelper.parse(e),
       );
       return false;
     }
