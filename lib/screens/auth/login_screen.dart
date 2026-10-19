@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,8 +17,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'tenant@akrili.test');
-  final _passwordController = TextEditingController(text: 'azerty');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
@@ -214,20 +215,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.settings_outlined, size: 20),
-                        tooltip: tr.apiBaseUrlSetting,
-                        onPressed: _showServerSettingsDialog,
+                  // Server/base-URL editor is a development aid only; never
+                  // exposed in release builds (prevents repointing the app at
+                  // a hostile server to phish credentials).
+                  if (kDebugMode)
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.settings_outlined, size: 20),
+                          tooltip: tr.apiBaseUrlSetting,
+                          onPressed: _showServerSettingsDialog,
+                        ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 8),
 
                   // Brand Hero Header
@@ -427,74 +432,77 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Quick test credentials for Paired Review
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          tr.quickLogin.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.grey,
-                            letterSpacing: 0.8,
+                  // Quick-login chips seed test credentials and must NEVER ship
+                  // in a release build. Debug-only.
+                  if (kDebugMode) ...[
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            tr.quickLogin.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey,
+                              letterSpacing: 0.8,
+                            ),
                           ),
                         ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _QuickRoleChip(
-                          label: tr.guestBadge,
-                          icon: Icons.explore_rounded,
-                          color: AppTheme.primary,
-                          onTap: () {
-                            setState(() {
-                              _emailController.text = 'tenant@akrili.test';
-                              _passwordController.text = 'azerty';
-                              _errorMessage = null;
-                            });
-                          },
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _QuickRoleChip(
+                            label: tr.guestBadge,
+                            icon: Icons.explore_rounded,
+                            color: AppTheme.primary,
+                            onTap: () {
+                              setState(() {
+                                _emailController.text = 'tenant@akrili.test';
+                                _passwordController.text = 'azerty';
+                                _errorMessage = null;
+                              });
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _QuickRoleChip(
-                          label: tr.hostBadge,
-                          icon: Icons.holiday_village_rounded,
-                          color: const Color(0xFF6366F1),
-                          onTap: () {
-                            setState(() {
-                              _emailController.text = 'owner@akrili.test';
-                              _passwordController.text = 'azerty';
-                              _errorMessage = null;
-                            });
-                          },
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickRoleChip(
+                            label: tr.hostBadge,
+                            icon: Icons.holiday_village_rounded,
+                            color: const Color(0xFF6366F1),
+                            onTap: () {
+                              setState(() {
+                                _emailController.text = 'owner@akrili.test';
+                                _passwordController.text = 'azerty';
+                                _errorMessage = null;
+                              });
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _QuickRoleChip(
-                          label: tr.adminBadge,
-                          icon: Icons.shield_rounded,
-                          color: Colors.amber[800]!,
-                          onTap: () {
-                            setState(() {
-                              _emailController.text = 'admin@akrili.test';
-                              _passwordController.text = 'azerty';
-                              _errorMessage = null;
-                            });
-                          },
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickRoleChip(
+                            label: tr.adminBadge,
+                            icon: Icons.shield_rounded,
+                            color: Colors.amber[800]!,
+                            onTap: () {
+                              setState(() {
+                                _emailController.text = 'admin@akrili.test';
+                                _passwordController.text = 'azerty';
+                                _errorMessage = null;
+                              });
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
