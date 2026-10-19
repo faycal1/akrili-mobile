@@ -64,6 +64,11 @@ class AppLocalizations {
         en: 'Delete this photo?',
       );
   String get deleteListing => _t('Supprimer l\'annonce', ar: 'حذف الإعلان', en: 'Delete listing');
+  String get onlyDraftEditable => _t(
+        'Seules les annonces en brouillon ou refusées peuvent être modifiées.',
+        ar: 'يمكن تعديل الإعلانات المسودة أو المرفوضة فقط.',
+        en: 'Only draft or rejected listings can be edited.',
+      );
   String get deleteListingConfirm => _t(
         'Supprimer définitivement cette annonce ?',
         ar: 'هل تريد حذف هذا الإعلان نهائيًا؟',

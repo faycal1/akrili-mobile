@@ -471,23 +471,30 @@ class _HostPropertyCard extends ConsumerWidget {
 
     return Dismissible(
       key: ValueKey('host-property-${property.id}'),
-      direction:
-          _isEditable ? DismissDirection.horizontal : DismissDirection.endToStart,
+      // Horizontal on every card so right-swipe always responds: it edits when
+      // allowed, otherwise it explains why the listing can't be edited.
+      direction: DismissDirection.horizontal,
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
-          // Swipe right: edit (draft/rejected only). Card stays in place.
-          context.push('/host/properties/${property.id}/edit');
+          // Swipe right: edit. Only draft/rejected listings are editable.
+          if (_isEditable) {
+            context.push('/host/properties/${property.id}/edit');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(tr.onlyDraftEditable)),
+            );
+          }
           return false;
         }
         // Swipe left: delete with confirmation.
         return _confirmAndDelete(context, ref, tr);
       },
-      background: _isEditable ? _buildSwipeBackground(
-        color: AppTheme.primary,
-        icon: Icons.edit_rounded,
+      background: _buildSwipeBackground(
+        color: _isEditable ? AppTheme.primary : Colors.grey,
+        icon: _isEditable ? Icons.edit_rounded : Icons.lock_outline_rounded,
         label: tr.edit,
         alignment: Alignment.centerLeft,
-      ) : const SizedBox.shrink(),
+      ),
       secondaryBackground: _buildSwipeBackground(
         color: const Color(0xFFEF4444),
         icon: Icons.delete_rounded,
