@@ -13,6 +13,8 @@ import 'package:akrili/core/theme/app_theme.dart';
 import 'package:akrili/core/storage/secure_storage_service.dart';
 import 'package:akrili/providers/theme_provider.dart';
 import 'package:akrili/providers/property_provider.dart';
+import 'package:akrili/providers/property_draft_provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   group('Akrili Models Unit Tests', () {
@@ -485,6 +487,77 @@ void main() {
       expect(trEn.guestFavoriteBadge, equals('Guest favorite'));
       expect(trEn.writeReviewBtn, equals('Write a Review'));
       expect(trEn.ratingLabel5, equals('Exceptional'));
+    });
+
+    test('Host role detection covers all valid host roles and excludes guest-only', () {
+      final owner = UserModel.fromJson({'id': 1, 'name': 'Owner', 'roles': ['owner'], 'locale': 'fr', 'is_verified': true});
+      final agency = UserModel.fromJson({'id': 2, 'name': 'Agency', 'roles': ['agency'], 'locale': 'fr', 'is_verified': true});
+      final hotelier = UserModel.fromJson({'id': 3, 'name': 'Hotelier', 'roles': ['hotelier'], 'locale': 'fr', 'is_verified': true});
+      final admin = UserModel.fromJson({'id': 4, 'name': 'Admin', 'roles': ['admin'], 'locale': 'fr', 'is_verified': true});
+      final tenant = UserModel.fromJson({'id': 5, 'name': 'Tenant', 'roles': ['tenant'], 'locale': 'fr', 'is_verified': false});
+      final unassigned = UserModel.fromJson({'id': 6, 'name': 'No Roles', 'roles': [], 'locale': 'fr', 'is_verified': false});
+
+      expect(owner.isHost, isTrue);
+      expect(agency.isHost, isTrue);
+      expect(hotelier.isHost, isTrue);
+      expect(admin.isHost, isTrue);
+
+      expect(tenant.isHost, isFalse);
+      expect(unassigned.isHost, isFalse);
+    });
+
+    test('PropertyDraftState step validations work as specified', () {
+      var state = const PropertyDraftState();
+
+      // Step 1: titleFr required
+      expect(state.isStep1Valid, isFalse);
+      state = state.copyWith(titleFr: 'Appartement vue mer');
+      expect(state.isStep1Valid, isTrue);
+
+      // Step 2: wilayaId and communeId required
+      expect(state.isStep2Valid, isFalse);
+      state = state.copyWith(wilayaId: 16);
+      expect(state.isStep2Valid, isFalse);
+      state = state.copyWith(communeId: 101);
+      expect(state.isStep2Valid, isTrue);
+
+      // Step 3: capacity >= 1, bedrooms >= 0, bathrooms >= 0, rentalMode valid
+      expect(state.isStep3Valid, isTrue);
+      state = state.copyWith(capacity: 0);
+      expect(state.isStep3Valid, isFalse);
+      state = state.copyWith(capacity: 4);
+      expect(state.isStep3Valid, isTrue);
+
+      // Step 4: nightlyPrice >= 0 and minNights >= 1
+      expect(state.isStep4Valid, isTrue);
+      state = state.copyWith(minNights: 0);
+      expect(state.isStep4Valid, isFalse);
+      state = state.copyWith(minNights: 2);
+      expect(state.isStep4Valid, isTrue);
+
+      // Step 5: cover photo required
+      expect(state.isStep5Valid, isFalse);
+      state = state.copyWith(cover: XFile('path/to/cover.jpg'));
+      expect(state.isStep5Valid, isTrue);
+    });
+
+    test('Host Wizard localizations are present for fr, ar, en', () {
+      final trFr = AppLocalizations(const Locale('fr'));
+      expect(trFr.listYourProperty, equals('Publier une annonce'));
+      expect(trFr.stepBasics, equals('Général'));
+      expect(trFr.stepPhotos, equals('Photos'));
+      expect(trFr.submitForReviewBtn, equals('Créer et soumettre pour validation'));
+      expect(trFr.propertySubmittedSuccess, equals('Annonce soumise avec succès !'));
+
+      final trAr = AppLocalizations(const Locale('ar'));
+      expect(trAr.listYourProperty, equals('أضف عقارك'));
+      expect(trAr.stepBasics, equals('الأساسيات'));
+      expect(trAr.stepPhotos, equals('الصور'));
+
+      final trEn = AppLocalizations(const Locale('en'));
+      expect(trEn.listYourProperty, equals('List your property'));
+      expect(trEn.stepBasics, equals('Basics'));
+      expect(trEn.stepPhotos, equals('Photos'));
     });
   });
 }

@@ -270,3 +270,8 @@ final hostPropertiesProvider = FutureProvider.autoDispose<List<PropertyModel>>((
   final repo = ref.watch(propertyRepositoryProvider);
   return await repo.getHostProperties();
 });
+
+final hostPropertyOptionsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final repo = ref.watch(propertyRepositoryProvider);
+  return await repo.getHostPropertyOptions();
+});

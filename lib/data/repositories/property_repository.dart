@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../models/property_model.dart';
@@ -75,5 +77,72 @@ class PropertyRepository {
     );
     final data = response.data['data'] as List<dynamic>;
     return data.map((e) => PropertyModel.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<PropertyModel> createHostProperty(Map<String, dynamic> data) async {
+    final response = await _client.dio.post(
+      ApiEndpoints.hostProperties,
+      data: data,
+    );
+    return PropertyModel.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  Future<PropertyModel> updateHostProperty(int id, Map<String, dynamic> data) async {
+    final response = await _client.dio.put(
+      ApiEndpoints.hostProperty(id),
+      data: data,
+    );
+    return PropertyModel.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  Future<PropertyModel> uploadHostPropertyMedia(
+    int propertyId, {
+    XFile? cover,
+    List<XFile>? gallery,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    final map = <String, dynamic>{};
+
+    if (cover != null) {
+      map['cover'] = await MultipartFile.fromFile(
+        cover.path,
+        filename: cover.name,
+      );
+    }
+
+    if (gallery != null && gallery.isNotEmpty) {
+      final galleryFiles = <MultipartFile>[];
+      for (final file in gallery) {
+        galleryFiles.add(await MultipartFile.fromFile(
+          file.path,
+          filename: file.name,
+        ));
+      }
+      map['gallery'] = galleryFiles;
+    }
+
+    final formData = FormData.fromMap(map);
+
+    final response = await _client.dio.post(
+      ApiEndpoints.hostPropertyMedia(propertyId),
+      data: formData,
+      onSendProgress: onSendProgress,
+    );
+
+    return PropertyModel.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  Future<void> deleteHostPropertyMedia(int propertyId, int mediaId) async {
+    await _client.dio.delete(ApiEndpoints.hostPropertyDeleteMedia(propertyId, mediaId));
+  }
+
+  Future<PropertyModel> submitHostProperty(int propertyId) async {
+    final response = await _client.dio.post(ApiEndpoints.hostPropertySubmit(propertyId));
+    return PropertyModel.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  Future<Map<String, dynamic>> getHostPropertyOptions() async {
+    final response = await _client.dio.get(ApiEndpoints.hostPropertyOptions);
+    return Map<String, dynamic>.from(response.data as Map);
   }
 }

@@ -9,6 +9,7 @@ import '../../screens/guest/booking_create_screen.dart';
 import '../../screens/guest/guest_shell_screen.dart';
 import '../../screens/guest/property_detail_screen.dart';
 import '../../screens/host/host_shell_screen.dart';
+import '../../screens/host/property_create_wizard_screen.dart';
 import '../../screens/shared/booking_detail_screen.dart';
 import '../../screens/shared/conversations_screen.dart';
 
@@ -143,6 +144,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/host/profile',
         builder: (context, state) => const HostShellScreen(initialTab: 3),
+      ),
+      GoRoute(
+        path: '/host/properties/new',
+        builder: (context, state) => const PropertyCreateWizardScreen(),
       ),
 
       // Detail and Action routes

@@ -356,6 +356,62 @@ class AppLocalizations {
         ar: 'يرجى مراجعة تفاصيل الحجز.',
         en: 'Please check your booking details.',
       );
+
+  // --- Host Property Wizard ---
+  String get listYourProperty => _t('Publier une annonce', ar: 'أضف عقارك', en: 'List your property');
+  String get listYourPropertySubtitle => _t(
+        'Créez une annonce pour louer votre bien et commencez à recevoir des réservations.',
+        ar: 'أنشئ إعلاناً لكراء عقارك وابدأ باستقبال الحجوزات.',
+        en: 'Create a listing for your stay and start receiving bookings.',
+      );
+  String get stepBasics => _t('Général', ar: 'الأساسيات', en: 'Basics');
+  String get stepLocation => _t('Localisation', ar: 'الموقع', en: 'Location');
+  String get stepDetails => _t('Détails', ar: 'التفاصيل', en: 'Details');
+  String get stepPricing => _t('Tarifs', ar: 'الأسعار', en: 'Pricing');
+  String get stepPhotos => _t('Photos', ar: 'الصور', en: 'Photos');
+  String get stepReview => _t('Validation', ar: 'المراجعة', en: 'Review');
+  String get nextStepBtn => _t('Étape suivante', ar: 'التالي', en: 'Next Step');
+  String get prevStepBtn => _t('Étape précédente', ar: 'السابق', en: 'Previous Step');
+  String get titleFrRequired => _t('Titre (Français, obligatoire)', ar: 'العنوان (بالفرنسية، إجباري)', en: 'Title (French, required)');
+  String get titleArOptional => _t('Titre (Arabe, optionnel)', ar: 'العنوان (بالعربية، اختياري)', en: 'Title (Arabic, optional)');
+  String get titleEnOptional => _t('Titre (Anglais, optionnel)', ar: 'العنوان (بالإنجليزية، اختياري)', en: 'Title (English, optional)');
+  String get descriptionFr => _t('Description (Français)', ar: 'الوصف (بالفرنسية)', en: 'Description (French)');
+  String get descriptionAr => _t('Description (Arabe)', ar: 'الوصف (بالعربية)', en: 'Description (Arabic)');
+  String get descriptionEn => _t('Description (Anglais)', ar: 'الوصف (بالإنجليزية)', en: 'Description (English)');
+  String get addressOptional => _t('Adresse exacte (optionnel)', ar: 'العنوان الدقيق (اختياري)', en: 'Exact address (optional)');
+  String get capacityLabel => _t('Capacité d\'accueil (voyageurs)', ar: 'الطاقة الاستيعابية (ضيوف)', en: 'Max capacity (guests)');
+  String get bedroomsLabel => _t('Chambres', ar: 'عدد الغرف', en: 'Bedrooms');
+  String get bathroomsLabel => _t('Salles de bain', ar: 'عدد الحمامات', en: 'Bathrooms');
+  String get amenitiesTitle => _t('Équipements inclus', ar: 'وسائل الراحة والتجهيزات', en: 'Amenities');
+  String get houseRulesTitle => _t('Règlement intérieur', ar: 'شروط وقواعد المسكن', en: 'House Rules');
+  String get nightlyPriceLabel => _t('Prix par nuit (DZD)', ar: 'السعر لليلة (د.ج)', en: 'Price per night (DZD)');
+  String get cleaningFeeLabel => _t('Frais de ménage (DZD)', ar: 'رسوم التنظيف (د.ج)', en: 'Cleaning fee (DZD)');
+  String get depositLabel => _t('Caution de garantie (DZD)', ar: 'مبلغ التأمين (د.ج)', en: 'Deposit (DZD)');
+  String get coverPhotoLabel => _t('Photo de couverture', ar: 'الصورة الرئيسية', en: 'Cover Photo');
+  String get coverPhotoHint => _t(
+        'Cette photo apparaîtra en premier dans les résultats de recherche.',
+        ar: 'هذه الصورة ستظهر في نتائج البحث والواجهة الرئيسية.',
+        en: 'This photo will appear first in search results.',
+      );
+  String get galleryPhotosLabel => _t('Photos de la galerie', ar: 'معرض الصور', en: 'Gallery Photos');
+  String get galleryPhotosHint => _t(
+        'Ajoutez jusqu\'à 20 photos mettant en valeur votre bien (max 8 Mo par photo).',
+        ar: 'أضف حتى 20 صورة تُبرز جمال وتجهيزات عقارك (حتى 8 ميغابايت لكل صورة).',
+        en: 'Add up to 20 photos showcasing your stay (max 8 MB per image).',
+      );
+  String get pickCover => _t('Choisir la photo principale', ar: 'اختيار الصورة الرئيسية', en: 'Pick cover photo');
+  String get addPhotos => _t('Ajouter des photos', ar: 'إضافة صور', en: 'Add photos');
+  String get submitForReviewBtn => _t('Créer et soumettre pour validation', ar: 'إنشاء وإرسال للمراجعة', en: 'Submit for Review');
+  String get creatingDraftStatus => _t('Création du brouillon...', ar: 'إنشاء المسودة...', en: 'Creating draft listing...');
+  String get uploadingPhotosStatus => _t('Téléversement des photos...', ar: 'جاري رفع الصور...', en: 'Uploading photos...');
+  String get submittingStatus => _t('Soumission pour modération...', ar: 'إرسال للمراجعة...', en: 'Submitting for review...');
+  String get propertySubmittedSuccess => _t('Annonce soumise avec succès !', ar: 'تم إرسال إعلانك بنجاح!', en: 'Listing submitted for review!');
+  String get propertySubmittedPendingMsg => _t(
+        'Votre logement a été créé avec le statut En attente de modération. Dès validation par notre équipe, il sera visible dans les recherches.',
+        ar: 'تم إنشاء إعلانك بحالة "قيد المراجعة". بمجرد موافقة فريق الإشراف، سيظهر مباشرة في نتائج البحث.',
+        en: 'Your listing is now pending review. Once approved by our moderation team, it will be visible in public search.',
+      );
+  String get viewMyListings => _t('Voir mes annonces', ar: 'عرض إعلاناتي', en: 'View my listings');
 }
 
 class _AppLocalizationsDelegate

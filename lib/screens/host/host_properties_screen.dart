@@ -40,6 +40,13 @@ class HostPropertiesScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/host/properties/new'),
+        icon: const Icon(Icons.add_rounded),
+        label: Text(tr.listYourProperty),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
+      ),
       body: propertiesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(
@@ -110,6 +117,18 @@ class HostPropertiesScreen extends ConsumerWidget {
                       'Vos hébergements en location courte durée apparaîtront ici. Gérez vos réservations et tarifs en temps réel.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13.5),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      onPressed: () => context.push('/host/properties/new'),
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(tr.listYourProperty),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
                     ),
                   ],
                 ),
@@ -230,7 +249,28 @@ class _HostPropertyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = context.tr;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isPublished = property.status == 'published' || property.status == 'active';
+    Color statusColor;
+    String statusLabel;
+    switch (property.status.toLowerCase()) {
+      case 'published':
+      case 'active':
+        statusColor = const Color(0xFF10B981);
+        statusLabel = 'ACTIF';
+        break;
+      case 'pending':
+        statusColor = const Color(0xFFF59E0B);
+        statusLabel = 'EN ATTENTE';
+        break;
+      case 'rejected':
+        statusColor = const Color(0xFFEF4444);
+        statusLabel = 'REFUSÉ';
+        break;
+      case 'draft':
+      default:
+        statusColor = const Color(0xFF6B7280);
+        statusLabel = 'BROUILLON';
+        break;
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -273,7 +313,7 @@ class _HostPropertyCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: (isPublished ? const Color(0xFF10B981) : Colors.grey).withOpacity(0.14),
+                              color: statusColor.withOpacity(0.14),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -283,17 +323,17 @@ class _HostPropertyCard extends StatelessWidget {
                                   width: 6,
                                   height: 6,
                                   decoration: BoxDecoration(
-                                    color: isPublished ? const Color(0xFF10B981) : Colors.grey,
+                                    color: statusColor,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
                                 const SizedBox(width: 5),
                                 Text(
-                                  isPublished ? 'ACTIF' : property.status.toUpperCase(),
+                                  statusLabel,
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: isPublished ? const Color(0xFF10B981) : Colors.grey,
+                                    color: statusColor,
                                     letterSpacing: 0.5,
                                   ),
                                 ),

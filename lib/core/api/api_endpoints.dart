@@ -24,6 +24,12 @@ class ApiEndpoints {
 
   // V1 Host
   static const String hostProperties = '/api/v1/host/properties';
+  static const String hostPropertyOptions = '/api/v1/host/properties/options';
+  static String hostProperty(int id) => '/api/v1/host/properties/$id';
+  static String hostPropertyMedia(int id) => '/api/v1/host/properties/$id/media';
+  static String hostPropertyDeleteMedia(int propertyId, int mediaId) =>
+      '/api/v1/host/properties/$propertyId/media/$mediaId';
+  static String hostPropertySubmit(int id) => '/api/v1/host/properties/$id/submit';
   static const String hostBookings = '/api/v1/host/bookings';
   static String acceptBooking(int id) => '/api/v1/bookings/$id/accept';
   static String rejectBooking(int id) => '/api/v1/bookings/$id/reject';
