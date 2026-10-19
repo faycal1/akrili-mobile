@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -241,12 +242,69 @@ class _StatColumn extends StatelessWidget {
   }
 }
 
-class _HostPropertyCard extends StatelessWidget {
+class _HostPropertyCard extends ConsumerWidget {
   final PropertyModel property;
   const _HostPropertyCard({required this.property});
 
+  bool get _isEditable =>
+      property.status.toLowerCase() == 'draft' ||
+      property.status.toLowerCase() == 'rejected';
+
+  /// Confirms, then deletes the listing server-side and refreshes the list.
+  /// Always returns false so the card is removed by the provider refresh
+  /// rather than by the Dismissible itself (keeps the list as source of truth).
+  Future<bool> _confirmAndDelete(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations tr,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr.deleteListing),
+        content: Text(tr.deleteListingConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(tr.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(tr.delete, style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return false;
+    }
+    try {
+      await ref.read(propertyRepositoryProvider).deleteHostProperty(property.id);
+      ref.invalidate(hostPropertiesProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.listingDeleted)),
+        );
+      }
+    } on DioException catch (e) {
+      if (context.mounted) {
+        final msg = e.response?.statusCode == 422
+            ? tr.cannotDeleteListing
+            : tr.serverErrorMsg;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.serverErrorMsg)),
+        );
+      }
+    }
+    return false;
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = context.tr;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     Color statusColor;
@@ -272,7 +330,7 @@ class _HostPropertyCard extends StatelessWidget {
         break;
     }
 
-    return Container(
+    final card = Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
@@ -408,6 +466,66 @@ class _HostPropertyCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+
+    return Dismissible(
+      key: ValueKey('host-property-${property.id}'),
+      direction:
+          _isEditable ? DismissDirection.horizontal : DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Swipe right: edit (draft/rejected only). Card stays in place.
+          context.push('/host/properties/${property.id}/edit');
+          return false;
+        }
+        // Swipe left: delete with confirmation.
+        return _confirmAndDelete(context, ref, tr);
+      },
+      background: _isEditable ? _buildSwipeBackground(
+        color: AppTheme.primary,
+        icon: Icons.edit_rounded,
+        label: tr.edit,
+        alignment: Alignment.centerLeft,
+      ) : const SizedBox.shrink(),
+      secondaryBackground: _buildSwipeBackground(
+        color: const Color(0xFFEF4444),
+        icon: Icons.delete_rounded,
+        label: tr.delete,
+        alignment: Alignment.centerRight,
+      ),
+      child: card,
+    );
+  }
+
+  Widget _buildSwipeBackground({
+    required Color color,
+    required IconData icon,
+    required String label,
+    required Alignment alignment,
+  }) {
+    final isLeft = alignment == Alignment.centerLeft;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 0),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: isLeft
+            ? [
+                Icon(icon, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ]
+            : [
+                Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                Icon(icon, color: Colors.white),
+              ],
       ),
     );
   }

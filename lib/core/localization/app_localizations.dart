@@ -63,6 +63,22 @@ class AppLocalizations {
         ar: 'هل تريد حذف هذه الصورة؟',
         en: 'Delete this photo?',
       );
+  String get deleteListing => _t('Supprimer l\'annonce', ar: 'حذف الإعلان', en: 'Delete listing');
+  String get deleteListingConfirm => _t(
+        'Supprimer définitivement cette annonce ?',
+        ar: 'هل تريد حذف هذا الإعلان نهائيًا؟',
+        en: 'Delete this listing permanently?',
+      );
+  String get listingDeleted => _t(
+        'Annonce supprimée.',
+        ar: 'تم حذف الإعلان.',
+        en: 'Listing deleted.',
+      );
+  String get cannotDeleteListing => _t(
+        'Impossible de supprimer une annonce avec des réservations.',
+        ar: 'لا يمكن حذف إعلان به حجوزات.',
+        en: 'Can\'t delete a listing that has bookings.',
+      );
   String get search => _t('Rechercher', ar: 'بحث', en: 'Search');
   String get seeAll => _t('Voir tout', ar: 'عرض الكل', en: 'See All');
   String get viewDetails => _t('Voir les détails', ar: 'عرض التفاصيل', en: 'View Details');

@@ -136,6 +136,10 @@ class PropertyRepository {
     await _client.dio.delete(ApiEndpoints.hostPropertyDeleteMedia(propertyId, mediaId));
   }
 
+  Future<void> deleteHostProperty(int propertyId) async {
+    await _client.dio.delete(ApiEndpoints.hostProperty(propertyId));
+  }
+
   Future<PropertyModel> submitHostProperty(int propertyId) async {
     final response = await _client.dio.post(ApiEndpoints.hostPropertySubmit(propertyId));
     return PropertyModel.fromJson(response.data['data'] as Map<String, dynamic>);
