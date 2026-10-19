@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/api/api_error_helper.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/models/property_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
 import '../../providers/property_provider.dart';
 import '../shared/widgets/akrili_image.dart';
@@ -17,6 +20,7 @@ class BookingCreateScreen extends ConsumerStatefulWidget {
 }
 
 class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
+  int? _initializedPropertyId;
   DateTime _checkIn = DateTime.now().add(const Duration(days: 1));
   DateTime _checkOut = DateTime.now().add(const Duration(days: 4));
   int _guests = 2;
@@ -28,7 +32,16 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
 
   int get _nights => _checkOut.difference(_checkIn).inDays;
 
-  Future<void> _pickCheckInDate() async {
+  void _syncWithProperty(PropertyModel property) {
+    if (_initializedPropertyId == property.id) return;
+    _initializedPropertyId = property.id;
+    final minNights = property.minNights > 0 ? property.minNights : 1;
+    _checkIn = DateTime.now().add(const Duration(days: 1));
+    _checkOut = _checkIn.add(Duration(days: minNights));
+    _guests = _guests.clamp(1, property.capacity);
+  }
+
+  Future<void> _pickCheckInDate(int minNights) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _checkIn,
@@ -38,29 +51,60 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
     if (picked != null) {
       setState(() {
         _checkIn = picked;
-        if (!_checkOut.isAfter(_checkIn)) {
-          _checkOut = _checkIn.add(const Duration(days: 1));
+        final requiredNights = minNights > 0 ? minNights : 1;
+        if (_checkOut.difference(_checkIn).inDays < requiredNights) {
+          _checkOut = _checkIn.add(Duration(days: requiredNights));
         }
+        _errorMessage = null;
       });
     }
   }
 
-  Future<void> _pickCheckOutDate() async {
+  Future<void> _pickCheckOutDate(int minNights) async {
+    final requiredNights = minNights > 0 ? minNights : 1;
+    final earliestCheckOut = _checkIn.add(Duration(days: requiredNights));
+    final initialDate = _checkOut.isBefore(earliestCheckOut) ? earliestCheckOut : _checkOut;
     final picked = await showDatePicker(
       context: context,
-      initialDate: _checkOut.isAfter(_checkIn) ? _checkOut : _checkIn.add(const Duration(days: 1)),
-      firstDate: _checkIn.add(const Duration(days: 1)),
+      initialDate: initialDate,
+      firstDate: earliestCheckOut,
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null) {
       setState(() {
         _checkOut = picked;
+        _errorMessage = null;
       });
     }
   }
 
-  Future<void> _submitBooking(int nightlyPrice, int cleaningFee) async {
+  Future<void> _submitBooking(PropertyModel property) async {
     final tr = context.tr;
+    final currentUser = ref.read(authNotifierProvider).valueOrNull;
+    final isOwner = currentUser != null && property.owner != null && currentUser.id == property.owner!.id;
+
+    if (isOwner) {
+      setState(() {
+        _errorMessage = tr.cannotBookOwnProperty;
+      });
+      return;
+    }
+
+    final minNights = property.minNights > 0 ? property.minNights : 1;
+    if (_nights < minNights) {
+      setState(() {
+        _errorMessage = tr.minNightsRequired(minNights);
+      });
+      return;
+    }
+
+    if (_guests > property.capacity) {
+      setState(() {
+        _errorMessage = tr.guestsExceedCapacity(property.capacity);
+      });
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
       _errorMessage = null;
@@ -85,7 +129,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = ApiErrorHelper.parse(e, tr);
       });
     } finally {
       if (mounted) {
@@ -138,6 +182,10 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
         ),
       ),
       data: (property) {
+        _syncWithProperty(property);
+
+        final currentUser = ref.watch(authNotifierProvider).valueOrNull;
+        final isOwner = currentUser != null && property.owner != null && currentUser.id == property.owner!.id;
         final totalNights = _nights > 0 ? _nights : 1;
         final nightsTotal = totalNights * property.nightlyPrice;
         final grandTotal = nightsTotal + property.cleaningFee;
@@ -152,6 +200,34 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (isOwner) ...[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.amber.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Color(0xFFB45309), size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            tr.cannotBookOwnProperty,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFB45309),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 // Property Summary Card
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -289,12 +365,37 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                           ),
                         ],
                       ),
+                      if (property.minNights > 1) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.info_outline_rounded, size: 13, color: AppTheme.primary),
+                              const SizedBox(width: 6),
+                              Text(
+                                tr.minNightsRequired(property.minNights),
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 14),
                       Row(
                         children: [
                           Expanded(
                             child: InkWell(
-                              onTap: _pickCheckInDate,
+                              onTap: () => _pickCheckInDate(property.minNights),
                               borderRadius: BorderRadius.circular(14),
                               child: Container(
                                 padding: const EdgeInsets.all(12),
@@ -326,7 +427,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                           ),
                           Expanded(
                             child: InkWell(
-                              onTap: _pickCheckOutDate,
+                              onTap: () => _pickCheckOutDate(property.minNights),
                               borderRadius: BorderRadius.circular(14),
                               child: Container(
                                 padding: const EdgeInsets.all(12),
@@ -471,13 +572,13 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.08),
+                    color: AppTheme.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFF10B981).withOpacity(0.25)),
+                    border: Border.all(color: AppTheme.primary.withOpacity(0.25)),
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 24),
+                      Icon(Icons.verified_user_rounded, color: AppTheme.primary, size: 24),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -537,7 +638,7 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                       boxShadow: _isSubmitting ? null : AppTheme.primaryButtonShadow,
                     ),
                     child: ElevatedButton(
-                      onPressed: _isSubmitting ? null : () => _submitBooking(property.nightlyPrice, property.cleaningFee),
+                      onPressed: (_isSubmitting || isOwner) ? null : () => _submitBooking(property),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -552,11 +653,15 @@ class _BookingCreateScreenState extends ConsumerState<BookingCreateScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  property.instantBooking ? tr.confirmAndBook : tr.requestToBook,
+                                  isOwner
+                                      ? 'Votre propre logement'
+                                      : (property.instantBooking ? tr.confirmAndBook : tr.requestToBook),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
-                                const SizedBox(width: 6),
-                                const Icon(Icons.arrow_forward_rounded, size: 16),
+                                if (!isOwner) ...[
+                                  const SizedBox(width: 6),
+                                  const Icon(Icons.arrow_forward_rounded, size: 16),
+                                ],
                               ],
                             ),
                     ),

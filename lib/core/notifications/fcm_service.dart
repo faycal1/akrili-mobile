@@ -98,7 +98,7 @@ class FcmService {
               importance: Importance.high,
               priority: Priority.high,
               icon: '@drawable/ic_notification',
-              color: const Color(0xFF10B981),
+              color: const Color(0xFF4F46E5),
             ),
           ),
           payload: jsonEncode(data),

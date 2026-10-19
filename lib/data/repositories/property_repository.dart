@@ -15,6 +15,7 @@ class PropertyRepository {
     String? checkIn,
     String? checkOut,
     String? type,
+    String? rentalMode,
     int? minPrice,
     int? maxPrice,
     int page = 1,
@@ -30,6 +31,7 @@ class PropertyRepository {
       if (checkIn != null) 'check_in': checkIn,
       if (checkOut != null) 'check_out': checkOut,
       if (type != null && type.isNotEmpty && type != 'all') 'type': type,
+      if (rentalMode != null && rentalMode.isNotEmpty && rentalMode != 'all') 'rental_mode': rentalMode,
       if (minPrice != null) 'min_price': minPrice,
       if (maxPrice != null) 'max_price': maxPrice,
     };

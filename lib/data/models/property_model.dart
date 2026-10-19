@@ -1,4 +1,5 @@
 import '../../core/api/api_client.dart';
+import 'review_model.dart';
 import 'user_model.dart';
 
 class WilayaModel {
@@ -97,6 +98,9 @@ class PropertyModel {
   final int reviewsCount;
   final bool isFavorite;
   final DateTime? createdAt;
+  final List<ReviewModel> reviews;
+  final Map<int, int> ratingDistribution;
+  final EligibleBookingModel? eligibleBooking;
 
   PropertyModel({
     required this.id,
@@ -126,6 +130,9 @@ class PropertyModel {
     required this.reviewsCount,
     required this.isFavorite,
     this.createdAt,
+    this.reviews = const [],
+    this.ratingDistribution = const {5: 0, 4: 0, 3: 0, 2: 0, 1: 0},
+    this.eligibleBooking,
   });
 
   factory PropertyModel.fromJson(Map<String, dynamic> json) {
@@ -148,6 +155,26 @@ class PropertyModel {
       resolvedDesc = rawDesc['fr']?.toString() ??
           rawDesc['en']?.toString() ??
           rawDesc['ar']?.toString();
+    }
+
+    final rawReviews = json['reviews'] as List<dynamic>?;
+    final parsedReviews = rawReviews
+            ?.map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    final Map<int, int> parsedDistribution = {};
+    if (json['rating_distribution'] is Map) {
+      (json['rating_distribution'] as Map).forEach((k, v) {
+        final star = int.tryParse(k.toString());
+        if (star != null) {
+          parsedDistribution[star] = (v as num?)?.toInt() ?? 0;
+        }
+      });
+    } else if (parsedReviews.isNotEmpty) {
+      for (var s = 1; s <= 5; s++) {
+        parsedDistribution[s] = parsedReviews.where((r) => r.rating == s).length;
+      }
     }
 
     return PropertyModel(
@@ -191,6 +218,15 @@ class PropertyModel {
       isFavorite: json['is_favorite'] as bool? ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
+          : null,
+      reviews: parsedReviews,
+      ratingDistribution: parsedDistribution.isNotEmpty
+          ? parsedDistribution
+          : const {5: 0, 4: 0, 3: 0, 2: 0, 1: 0},
+      eligibleBooking: json['eligible_booking'] != null &&
+              json['eligible_booking'] is Map<String, dynamic>
+          ? EligibleBookingModel.fromJson(
+              json['eligible_booking'] as Map<String, dynamic>)
           : null,
     );
   }

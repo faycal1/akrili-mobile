@@ -7,6 +7,7 @@ import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -92,6 +93,99 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () {
                     HapticFeedback.selectionClick();
                     ref.read(appLocaleProvider.notifier).setLocale('en');
+                    Navigator.pop(ctx);
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showThemeBottomSheet(BuildContext context, WidgetRef ref) {
+    HapticFeedback.lightImpact();
+    final tr = context.tr;
+    final currentThemeMode = ref.read(themeModeProvider);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.35),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    tr.chooseThemeTitle,
+                    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: const Icon(Icons.brightness_auto_rounded, size: 26, color: AppTheme.primary),
+                  title: Text(tr.themeSystem, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: currentThemeMode == ThemeMode.system
+                      ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary)
+                      : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  selected: currentThemeMode == ThemeMode.system,
+                  selectedTileColor: AppTheme.primary.withOpacity(0.08),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.system);
+                    Navigator.pop(ctx);
+                  },
+                ),
+                const SizedBox(height: 4),
+                ListTile(
+                  leading: const Icon(Icons.wb_sunny_rounded, size: 26, color: Colors.amber),
+                  title: Text(tr.themeLight, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: currentThemeMode == ThemeMode.light
+                      ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary)
+                      : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  selected: currentThemeMode == ThemeMode.light,
+                  selectedTileColor: AppTheme.primary.withOpacity(0.08),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.light);
+                    Navigator.pop(ctx);
+                  },
+                ),
+                const SizedBox(height: 4),
+                ListTile(
+                  leading: const Icon(Icons.nightlight_round, size: 26, color: AppTheme.secondary),
+                  title: Text(tr.themeDark, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: currentThemeMode == ThemeMode.dark
+                      ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary)
+                      : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  selected: currentThemeMode == ThemeMode.dark,
+                  selectedTileColor: AppTheme.primary.withOpacity(0.08),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.dark);
                     Navigator.pop(ctx);
                   },
                 ),
@@ -237,11 +331,35 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
+  String _getThemeDisplayName(BuildContext context, ThemeMode mode) {
+    final tr = context.tr;
+    switch (mode) {
+      case ThemeMode.light:
+        return tr.themeLight;
+      case ThemeMode.dark:
+        return tr.themeDark;
+      case ThemeMode.system:
+        return tr.themeSystem;
+    }
+  }
+
+  IconData _getThemeIcon(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return Icons.wb_sunny_rounded;
+      case ThemeMode.dark:
+        return Icons.nightlight_round;
+      case ThemeMode.system:
+        return Icons.brightness_auto_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
     final activeRole = ref.watch(activeRoleModeProvider);
     final appLocale = ref.watch(appLocaleProvider);
+    final currentThemeMode = ref.watch(themeModeProvider);
     final tr = context.tr;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -357,6 +475,21 @@ class ProfileScreen extends ConsumerWidget {
                             subtitle: Text(_getLocaleDisplayName(appLocale.languageCode)),
                             trailing: const Icon(Icons.chevron_right_rounded),
                             onTap: () => _showLanguageBottomSheet(context, ref),
+                          ),
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(_getThemeIcon(currentThemeMode), color: AppTheme.primary, size: 20),
+                            ),
+                            title: Text(tr.themeModeSetting, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle: Text(_getThemeDisplayName(context, currentThemeMode)),
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                            onTap: () => _showThemeBottomSheet(context, ref),
                           ),
                           const Divider(height: 1),
                           ListTile(
@@ -600,6 +733,21 @@ class ProfileScreen extends ConsumerWidget {
                         subtitle: Text(_getLocaleDisplayName(appLocale.languageCode)),
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => _showLanguageBottomSheet(context, ref),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(_getThemeIcon(currentThemeMode), color: AppTheme.primary, size: 20),
+                        ),
+                        title: Text(tr.themeModeSetting, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text(_getThemeDisplayName(context, currentThemeMode)),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => _showThemeBottomSheet(context, ref),
                       ),
                       const Divider(height: 1),
                       ListTile(

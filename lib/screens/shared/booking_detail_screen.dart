@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/api/api_error_helper.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/booking_provider.dart';
@@ -123,7 +124,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}')),
+          SnackBar(content: Text(ApiErrorHelper.parse(e, tr))),
         );
       }
     } finally {
@@ -193,7 +194,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}')),
+          SnackBar(content: Text(ApiErrorHelper.parse(e, tr))),
         );
       }
     } finally {
@@ -202,6 +203,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   }
 
   Future<void> _handleSubmitReview() async {
+    final tr = context.tr;
     final comment = _reviewController.text.trim();
     if (comment.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -220,16 +222,20 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         comment: comment,
       );
       ref.invalidate(bookingDetailProvider(widget.id));
+      ref.invalidate(guestBookingsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Merci ! Votre avis a été publié avec succès.')),
+          SnackBar(
+            content: Text(tr.reviewSubmittedSuccess),
+            backgroundColor: AppTheme.emerald,
+          ),
         );
         _reviewController.clear();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors de la publication : $e')),
+          SnackBar(content: Text(ApiErrorHelper.parse(e, tr))),
         );
       }
     } finally {

@@ -237,7 +237,7 @@ class _NotificationCard extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: isUnread
-            ? (isDark ? AppTheme.primary.withOpacity(0.08) : const Color(0xFFF0FDFA))
+            ? (isDark ? AppTheme.primary.withOpacity(0.08) : AppTheme.primaryLight)
             : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(

@@ -15,6 +15,15 @@ class SecureStorageService {
   static const String _keyActiveRole = 'active_app_role';
   static const String _keyCustomBaseUrl = 'custom_base_url';
   static const String _keyLocale = 'app_locale';
+  static const String _keyThemeMode = 'app_theme_mode';
+
+  Future<void> saveThemeMode(String mode) async {
+    await _storage.write(key: _keyThemeMode, value: mode);
+  }
+
+  Future<String?> getThemeMode() async {
+    return await _storage.read(key: _keyThemeMode);
+  }
 
   Future<void> saveLocale(String locale) async {
     await _storage.write(key: _keyLocale, value: locale);

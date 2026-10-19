@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Brand Colors
-  static const Color primary = Color(0xFF0D9488); // Mediterranean Teal
-  static const Color primaryDark = Color(0xFF0F766E);
-  static const Color primaryLight = Color(0xFFCCFBF1);
+  // Brand Colors - Royal Indigo & Electric Cobalt (No logo teal/emerald)
+  static const Color primary = Color(0xFF4F46E5); // Royal Indigo
+  static const Color primaryDark = Color(0xFF3730A3); // Deep Indigo
+  static const Color primaryLight = Color(0xFFEEF2FF); // Soft Indigo
   static const Color secondary = Color(0xFFE11D48); // Algerian Coral / Rose
   static const Color accent = Color(0xFFF59E0B); // Desert Amber / Gold
-  static const Color emerald = Color(0xFF10B981); // Instant book & Verified
-  static const Color indigo = Color(0xFF6366F1);
+  static const Color info = Color(0xFF0EA5E9); // Sky / Cyan
+  static const Color indigo = Color(0xFF6366F1); // Electric Indigo
+  static const Color emerald = Color(0xFF10B981); // Success indicator
 
   // Neutral Colors (Light)
   static const Color backgroundLight = Color(0xFFF8FAFC);
@@ -30,7 +31,7 @@ class AppTheme {
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF0D9488), Color(0xFF059669)],
+    colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -47,8 +48,8 @@ class AppTheme {
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient emeraldGradient = LinearGradient(
-    colors: [Color(0xFF10B981), Color(0xFF059669)],
+  static const LinearGradient blueGradient = LinearGradient(
+    colors: [Color(0xFF2563EB), Color(0xFF4F46E5)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -80,7 +81,7 @@ class AppTheme {
 
   static const List<BoxShadow> primaryButtonShadow = [
     BoxShadow(
-      color: Color(0x380D9488),
+      color: Color(0x384F46E5),
       blurRadius: 14,
       offset: Offset(0, 6),
       spreadRadius: 0,
@@ -96,6 +97,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
+      cardColor: surfaceLight,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
         primary: primary,
@@ -196,6 +198,7 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
+      cardColor: surfaceDark,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
         primary: primary,
@@ -234,7 +237,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: primary, width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF818CF8), width: 1.5),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -258,13 +261,13 @@ class AppTheme {
         backgroundColor: surfaceDark,
         elevation: 2,
         height: 68,
-        indicatorColor: primary.withOpacity(0.2),
+        indicatorColor: primary.withOpacity(0.24),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: primary,
+              color: Color(0xFF818CF8),
             );
           }
           return const TextStyle(

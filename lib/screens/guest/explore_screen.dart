@@ -110,6 +110,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     int? tempCommuneId = currentFilter.communeId;
     String? tempCommuneName = currentFilter.communeName;
     String? tempType = currentFilter.type;
+    String? tempRentalMode = currentFilter.rentalMode;
     int tempCapacity = currentFilter.capacity ?? 1;
     final minPriceController = TextEditingController(
       text: currentFilter.minPrice != null ? '${currentFilter.minPrice}' : '',
@@ -177,6 +178,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                                   tempCommuneId = null;
                                   tempCommuneName = null;
                                   tempType = null;
+                                  tempRentalMode = null;
                                   tempCapacity = 1;
                                   minPriceController.clear();
                                   maxPriceController.clear();
@@ -344,6 +346,43 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         ),
                         const SizedBox(height: 18),
                         Text(
+                          tr.rentalMode,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            'all',
+                            'seasonal',
+                            'yearly',
+                            'both',
+                          ].map((modeKey) {
+                            final isSelected = (tempRentalMode == null && modeKey == 'all') ||
+                                (tempRentalMode == modeKey);
+                            final label = modeKey == 'all'
+                                ? tr.allRentalModes
+                                : tr.rentalModeLabel(modeKey);
+
+                            return ChoiceChip(
+                              label: Text(label),
+                              selected: isSelected,
+                              selectedColor: AppTheme.primary.withOpacity(0.18),
+                              labelStyle: TextStyle(
+                                color: isSelected ? AppTheme.primary : null,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              ),
+                              onSelected: (selected) {
+                                setModalState(() {
+                                  tempRentalMode = (modeKey == 'all' || !selected) ? null : modeKey;
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
                           tr.pricePerNight,
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
@@ -434,6 +473,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               clearCommune: tempCommuneId == null,
                               type: tempType,
                               clearType: tempType == null,
+                              rentalMode: tempRentalMode,
+                              clearRentalMode: tempRentalMode == null,
                               minPrice: minP,
                               maxPrice: maxP,
                               clearPrice: minP == null && maxP == null,
@@ -920,6 +961,23 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         },
                       ),
                     ),
+                  if (filterState.rentalMode != null &&
+                      filterState.rentalMode!.isNotEmpty &&
+                      filterState.rentalMode != 'all')
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: InputChip(
+                        avatar: const Icon(Icons.key_rounded, size: 14),
+                        label: Text(
+                          tr.rentalModeLabel(filterState.rentalMode!),
+                          style: const TextStyle(fontSize: 11.5),
+                        ),
+                        onDeleted: () {
+                          ref.read(propertyFilterProvider.notifier).state =
+                              filterState.copyWith(clearRentalMode: true);
+                        },
+                      ),
+                    ),
                   TextButton.icon(
                     icon: const Icon(Icons.close_rounded, size: 14),
                     label: Text(tr.clearAll, style: const TextStyle(fontSize: 11.5)),
@@ -1231,21 +1289,46 @@ class _PropertyCardState extends ConsumerState<_PropertyCard>
                   Positioned(
                     bottom: 12,
                     left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.65),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: Text(
-                        _formatPropertyType(property.type, tr),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                    right: 12,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.65),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Text(
+                            _formatPropertyType(property.type, tr),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (property.rentalMode != null) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withOpacity(0.85),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: Text(
+                              tr.rentalModeLabel(property.rentalMode!),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   if (property.instantBooking)

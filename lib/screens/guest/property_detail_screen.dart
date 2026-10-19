@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/api/api_error_helper.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/property_model.dart';
+import '../../data/models/review_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/booking_provider.dart';
 import '../../providers/favorite_provider.dart';
 import '../../providers/property_provider.dart';
 import '../shared/widgets/akrili_image.dart';
@@ -190,45 +193,92 @@ class _DetailContentState extends ConsumerState<_DetailContent>
                 ],
               ),
               const Spacer(),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: AppTheme.primaryButtonShadow,
-                ),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: () {
-                    HapticFeedback.mediumImpact();
-                    context.push('/properties/${property.id}/book');
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (property.instantBooking) ...[
-                        const Icon(Icons.bolt_rounded, color: Colors.amber, size: 18),
-                        const SizedBox(width: 4),
-                      ],
-                      Text(
-                        property.instantBooking
-                            ? 'Réservation instantanée'
-                            : 'Réserver ce séjour',
-                        style: const TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+              Builder(
+                builder: (context) {
+                  final currentUser = ref.watch(authNotifierProvider).valueOrNull;
+                  final isOwner = currentUser != null && property.owner != null && currentUser.id == property.owner!.id;
+
+                  if (isOwner) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[800] : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(tr.cannotBookOwnProperty)),
+                          );
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.home_outlined, color: isDark ? Colors.white70 : Colors.black87, size: 18),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Votre annonce',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white70 : Colors.black87,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                    );
+                  }
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.primaryGradient,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: AppTheme.primaryButtonShadow,
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        context.push('/properties/${property.id}/book');
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (property.instantBooking) ...[
+                            const Icon(Icons.bolt_rounded, color: Colors.amber, size: 18),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            property.instantBooking
+                                ? 'Réservation instantanée'
+                                : 'Réserver ce séjour',
+                            style: const TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -700,6 +750,10 @@ class _DetailContentState extends ConsumerState<_DetailContent>
                         ],
                       ),
                     ),
+                    const SizedBox(height: 28),
+
+                    // Airbnb REVIEWS & RATINGS SECTION
+                    _buildReviewsSection(context, ref, property),
                   ],
                 ),
               ),
@@ -719,7 +773,7 @@ class _DetailContentState extends ConsumerState<_DetailContent>
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF0FDFA),
+        color: isDark ? Colors.white.withOpacity(0.04) : AppTheme.primaryLight,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: AppTheme.primary.withOpacity(0.18),
@@ -775,6 +829,785 @@ class _DetailContentState extends ConsumerState<_DetailContent>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildReviewsSection(
+    BuildContext context,
+    WidgetRef ref,
+    PropertyModel property,
+  ) {
+    final tr = context.tr;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isGuestFavorite =
+        (property.averageRating ?? 0) >= 4.8 && property.reviewsCount >= 3;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Guest Favorite Badge (Airbnb signature)
+        if (isGuestFavorite) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF3B2506), const Color(0xFF1E293B)]
+                    : [const Color(0xFFFFFBEB), const Color(0xFFFEF3C7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.amber.withOpacity(0.4),
+                width: 1.2,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.stars_rounded, color: Colors.amber, size: 28),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tr.guestFavoriteBadge,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        tr.guestFavoriteSubtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey[300] : Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+        ],
+
+        // Eligible Stay Review CTA Banner (Airbnb prompt to rate stay)
+        if (property.eligibleBooking != null) ...[
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [AppTheme.primary.withOpacity(0.18), const Color(0xFF1E293B)]
+                    : [AppTheme.primaryLight, Colors.white],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppTheme.primary.withOpacity(0.35),
+                width: 1.2,
+              ),
+              boxShadow: AppTheme.cardShadow,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.auto_awesome_rounded,
+                          color: AppTheme.primary, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        tr.eligibleStayBannerTitle,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  tr.eligibleStayBannerSubtitle,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                  ),
+                ),
+                if (property.eligibleBooking!.checkIn != null &&
+                    property.eligibleBooking!.checkOut != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '${property.eligibleBooking!.checkIn} → ${property.eligibleBooking!.checkOut} (${property.eligibleBooking!.reference})',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primary.withOpacity(0.85),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 14),
+                ElevatedButton.icon(
+                  onPressed: () => _showLeaveReviewModal(
+                    context,
+                    property.eligibleBooking!.id,
+                    property.id,
+                  ),
+                  icon: const Icon(Icons.rate_review_rounded, size: 18),
+                  label: Text(tr.writeReviewBtn),
+                  style: ElevatedButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+        ],
+
+        // Section Title & Overall Rating Header
+        Row(
+          children: [
+            const Icon(Icons.star_rounded, color: Colors.amber, size: 26),
+            const SizedBox(width: 8),
+            Text(
+              property.averageRating != null
+                  ? '${property.averageRating!.toStringAsFixed(1)} · ${tr.reviewsCountText(property.reviewsCount)}'
+                  : tr.reviewsTitle,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Rating Breakdown Bar Chart (Airbnb 5-1 star distribution)
+        if (property.reviewsCount > 0) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
+              ),
+              boxShadow: AppTheme.cardShadow,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tr.ratingBreakdown,
+                  style:
+                      const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                ),
+                const SizedBox(height: 12),
+                ...List.generate(5, (idx) {
+                  final star = 5 - idx;
+                  final count = property.ratingDistribution[star] ?? 0;
+                  final ratio = property.reviewsCount > 0
+                      ? (count / property.reviewsCount)
+                      : 0.0;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3.5),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 24,
+                          child: Text(
+                            '$star',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 12),
+                          ),
+                        ),
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: ratio,
+                              minHeight: 6,
+                              backgroundColor: isDark
+                                  ? Colors.white10
+                                  : Colors.black.withOpacity(0.06),
+                              valueColor:
+                                  const AlwaysStoppedAnimation<Color>(Colors.amber),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 24,
+                          child: Text(
+                            '$count',
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+        ],
+
+        // Reviews List
+        if (property.reviews.isNotEmpty) ...[
+          ...property.reviews.take(3).map((review) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildReviewCard(review, isDark, tr),
+            );
+          }),
+          if (property.reviews.length > 3) ...[
+            const SizedBox(height: 4),
+            OutlinedButton(
+              onPressed: () => _showAllReviewsModal(context, property),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                side: BorderSide(
+                  color:
+                      isDark ? Colors.white24 : Colors.black.withOpacity(0.15),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  tr.seeAllReviews(property.reviewsCount),
+                  style:
+                      const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ),
+            ),
+          ],
+        ] else ...[
+          // Empty state for reviews
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
+              ),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.star_outline_rounded,
+                    size: 40,
+                    color: isDark ? Colors.grey[600] : Colors.grey[400],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    tr.noReviewsYet,
+                    style:
+                        const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    tr.beFirstToReview,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildReviewCard(ReviewModel review, bool isDark, AppLocalizations tr) {
+    final initial = review.userName.isNotEmpty
+        ? review.userName.substring(0, 1).toUpperCase()
+        : 'V';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withOpacity(0.04)
+            : Colors.grey.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppTheme.primary.withOpacity(0.12),
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.userName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (review.createdAtFormatted != null)
+                      Text(
+                        review.createdAtFormatted!,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(5, (index) {
+                  return Icon(
+                    index < review.rating
+                        ? Icons.star_rounded
+                        : Icons.star_border_rounded,
+                    color: Colors.amber,
+                    size: 16,
+                  );
+                }),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            review.comment,
+            style: TextStyle(
+              fontSize: 13.5,
+              height: 1.45,
+              color: isDark ? Colors.grey[200] : Colors.black87,
+            ),
+          ),
+          if (review.reply != null && review.reply!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppTheme.primary.withOpacity(0.08)
+                    : AppTheme.primaryLight.withOpacity(0.55),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppTheme.primary.withOpacity(0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.reply_rounded,
+                          size: 14, color: AppTheme.primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        tr.hostReplyTitle,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    review.reply!,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: isDark ? Colors.grey[300] : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showAllReviewsModal(BuildContext context, PropertyModel property) {
+    HapticFeedback.lightImpact();
+    final tr = context.tr;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.85,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (sheetCtx, scrollController) {
+            return Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: Colors.amber, size: 24),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${property.averageRating != null ? property.averageRating!.toStringAsFixed(1) : ''} · ${tr.reviewsCountText(property.reviewsCount)}',
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.all(20),
+                    itemCount: property.reviews.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (c, idx) {
+                      return _buildReviewCard(
+                          property.reviews[idx], isDark, tr);
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showLeaveReviewModal(
+    BuildContext context,
+    int bookingId,
+    int propertyId,
+  ) {
+    HapticFeedback.lightImpact();
+    final tr = context.tr;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    int rating = 5;
+    final commentController = TextEditingController();
+    bool isSubmitting = false;
+    String? errorMessage;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            String getRatingLabel(int r) {
+              switch (r) {
+                case 5:
+                  return tr.ratingLabel5;
+                case 4:
+                  return tr.ratingLabel4;
+                case 3:
+                  return tr.ratingLabel3;
+                case 2:
+                  return tr.ratingLabel2;
+                case 1:
+                default:
+                  return tr.ratingLabel1;
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 16,
+                bottom: MediaQuery.of(modalContext).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.35),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.star_rounded,
+                              color: Colors.amber, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            tr.reviewModalTitle,
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      tr.reviewModalSubtitle,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Large Airbnb-style interactive stars
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.04)
+                            : Colors.amber.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(18),
+                        border:
+                            Border.all(color: Colors.amber.withOpacity(0.25)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(5, (index) {
+                              final starNum = index + 1;
+                              final isSelected = starNum <= rating;
+                              return GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setModalState(() {
+                                    rating = starNum;
+                                  });
+                                },
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 5),
+                                  child: Icon(
+                                    isSelected
+                                        ? Icons.star_rounded
+                                        : Icons.star_border_rounded,
+                                    color: Colors.amber,
+                                    size: 40,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                          const SizedBox(height: 8),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            child: Text(
+                              getRatingLabel(rating),
+                              key: ValueKey(rating),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    TextField(
+                      controller: commentController,
+                      decoration: InputDecoration(
+                        hintText: tr.commentPlaceholder,
+                        alignLabelWithHint: true,
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                      maxLines: 4,
+                      minLines: 3,
+                      maxLength: 1000,
+                      onChanged: (_) {
+                        if (errorMessage != null) {
+                          setModalState(() => errorMessage = null);
+                        }
+                      },
+                    ),
+                    if (errorMessage != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        errorMessage!,
+                        style: const TextStyle(
+                            color: AppTheme.secondary, fontSize: 12),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              final comment = commentController.text.trim();
+                              if (comment.length < 5) {
+                                setModalState(() {
+                                  errorMessage = tr.reviewMinChars;
+                                });
+                                return;
+                              }
+                              setModalState(() {
+                                isSubmitting = true;
+                                errorMessage = null;
+                              });
+                              try {
+                                HapticFeedback.mediumImpact();
+                                final repo =
+                                    ref.read(bookingRepositoryProvider);
+                                await repo.submitReview(
+                                  bookingId: bookingId,
+                                  rating: rating,
+                                  comment: comment,
+                                );
+                                ref.invalidate(
+                                    propertyDetailProvider(propertyId));
+                                ref.invalidate(guestBookingsProvider);
+                                ref.invalidate(
+                                    bookingDetailProvider(bookingId));
+                                if (modalContext.mounted) {
+                                  Navigator.pop(modalContext);
+                                }
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(tr.reviewSubmittedSuccess),
+                                      backgroundColor: AppTheme.emerald,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                setModalState(() {
+                                  isSubmitting = false;
+                                  errorMessage = ApiErrorHelper.parse(e, tr);
+                                });
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              tr.publishReviewBtn,
+                              style: const TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

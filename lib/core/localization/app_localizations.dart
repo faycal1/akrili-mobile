@@ -122,8 +122,23 @@ class AppLocalizations {
   String get rentalMode => _t('Mode de location', ar: 'نوع الإيجار', en: 'Rental Mode');
   String get allRentalModes => _t('Tous les modes', ar: 'كل الأنواع', en: 'All Modes');
   String get modeSeasonal => _t('Saisonnier', ar: 'موسمي', en: 'Seasonal');
+  String get modeYearly => _t('À l\'année', ar: 'سنوي', en: 'Yearly');
+  String get modeBoth => _t('Les deux', ar: 'كلاهما', en: 'Both');
   String get modeMonthly => _t('Mensuel', ar: 'شهري', en: 'Monthly');
   String get modeDaily => _t('Journalier', ar: 'يومي', en: 'Daily');
+
+  String rentalModeLabel(String mode) {
+    switch (mode) {
+      case 'seasonal':
+        return modeSeasonal;
+      case 'yearly':
+        return modeYearly;
+      case 'both':
+        return modeBoth;
+      default:
+        return mode;
+    }
+  }
   String get pricePerNight => _t('Prix par nuit (DZD)', ar: 'السعر لليلة (د.ج)', en: 'Price per night (DZD)');
   String get minNightsLabel => _t('Nuits minimum', ar: 'الحد الأدنى لليالي', en: 'Min nights');
   String get minGuestsLabel => _t('Capacité minimale (voyageurs)', ar: 'الحد الأدنى للضيوف', en: 'Min guests capacity');
@@ -221,6 +236,11 @@ class AppLocalizations {
   String get arabicOption => 'العربية';
   String get englishOption => 'English';
   String get darkMode => _t('Mode Sombre', ar: 'الوضع الليلي', en: 'Dark Mode');
+  String get themeModeSetting => _t('Thème d\'affichage', ar: 'مظهر التطبيق', en: 'Theme Mode');
+  String get chooseThemeTitle => _t('Choisir le mode d\'affichage', ar: 'اختيار مظهر التطبيق', en: 'Choose Theme Mode');
+  String get themeLight => _t('Mode Clair', ar: 'الوضع النهاري', en: 'Light Mode');
+  String get themeDark => _t('Mode Sombre', ar: 'الوضع الليلي', en: 'Dark Mode');
+  String get themeSystem => _t('Système (Automatique)', ar: 'حسب إعدادات النظام', en: 'System Default');
   String get apiBaseUrlSetting => _t('Paramètres de connexion API', ar: 'إعدادات خادم API', en: 'API Connection Settings');
   String get signOut => _t('Se déconnecter', ar: 'تسجيل الخروج', en: 'Sign Out');
   String get confirmSignOutTitle => _t('Voulez-vous vraiment vous déconnecter ?', ar: 'هل تريد تسجيل الخروج؟', en: 'Are you sure you want to sign out?');
@@ -228,6 +248,63 @@ class AppLocalizations {
         'Vous devrez vous reconnecter pour accéder à vos réservations et favoris.',
         ar: 'سيتوجب عليك تسجيل الدخول مرة أخرى للوصول إلى حجوزاتك ومفضلاتك.',
         en: 'You will need to sign back in to access your bookings and saved stays.',
+      );
+
+  // --- Reviews & Ratings (Airbnb style) ---
+  String get reviewsTitle => _t('Évaluations & Avis', ar: 'التقييمات والآراء', en: 'Reviews & Ratings');
+  String reviewsCountText(int count) => _t(
+        '$count avis',
+        ar: '$count تقييم',
+        en: '$count reviews',
+      );
+  String get noReviewsYet => _t('Aucun avis pour le moment', ar: 'لا توجد تقييمات حتى الآن', en: 'No reviews yet');
+  String get beFirstToReview => _t(
+        'Soyez le premier voyageur à laisser une évaluation après votre séjour.',
+        ar: 'كن أول مسافر يترك تقييماً بعد إقامتك.',
+        en: 'Be the first guest to leave a review after your stay.',
+      );
+  String get guestFavoriteBadge => _t('Coup de cœur voyageurs', ar: 'مفضل لدى المسافرين', en: 'Guest favorite');
+  String get guestFavoriteSubtitle => _t(
+        'L\'un des logements les plus appréciés sur Akrili selon les voyageurs.',
+        ar: 'أحد أكثر المساكن تفضيلاً على أكرلي وفقاً لآراء المسافرين.',
+        en: 'One of the most loved homes on Akrili according to guests.',
+      );
+  String get overallRating => _t('Note globale', ar: 'التقييم العام', en: 'Overall rating');
+  String get ratingBreakdown => _t('Répartition des notes', ar: 'تفاصيل التقييمات', en: 'Rating breakdown');
+  String get eligibleStayBannerTitle => _t('Vous avez séjourné dans ce logement !', ar: 'لقد أقمت في هذا المسكن!', en: 'You stayed at this property!');
+  String get eligibleStayBannerSubtitle => _t(
+        'Partagez votre expérience avec la communauté Akrili.',
+        ar: 'شارك تجربتك مع مجتمع أكرلي.',
+        en: 'Share your experience with the Akrili community.',
+      );
+  String get writeReviewBtn => _t('Rédiger un avis', ar: 'كتابة تقييم', en: 'Write a Review');
+  String get reviewModalTitle => _t('Évaluer votre séjour', ar: 'تقييم إقامتك', en: 'Rate Your Stay');
+  String get reviewModalSubtitle => _t(
+        'Votre évaluation aide les futurs voyageurs et permet à l\'hôte d\'améliorer son accueil.',
+        ar: 'تقييمك يساعد المسافرين الآخرين ويشجع المضيف على تقديم الأفضل.',
+        en: 'Your review helps future guests make great choices and helps hosts improve.',
+      );
+  String get ratingLabel5 => _t('Exceptionnel', ar: 'ممتاز', en: 'Exceptional');
+  String get ratingLabel4 => _t('Très bien', ar: 'جيد جداً', en: 'Very Good');
+  String get ratingLabel3 => _t('Moyen', ar: 'متوسط', en: 'Average');
+  String get ratingLabel2 => _t('Décevant', ar: 'مخيّب', en: 'Disappointing');
+  String get ratingLabel1 => _t('Mauvais', ar: 'سيء', en: 'Poor');
+  String get commentPlaceholder => _t(
+        'Parlez de la propreté, de l\'accueil de l\'hôte, de l\'emplacement...',
+        ar: 'تحدث عن النظافة، حسن الاستقبال، راحة المكان، الموقع...',
+        en: 'Mention cleanliness, host hospitality, accuracy, location...',
+      );
+  String get publishReviewBtn => _t('Publier mon avis', ar: 'نشر تقييمي', en: 'Publish Review');
+  String get reviewMinChars => _t(
+        'Veuillez écrire au moins 5 caractères pour votre avis.',
+        ar: 'يرجى كتابة 5 أحرف على الأقل في التقييم.',
+        en: 'Please write at least 5 characters for your review.',
+      );
+  String get hostReplyTitle => _t('Réponse de l\'hôte', ar: 'رد المضيف', en: 'Host response');
+  String seeAllReviews(int count) => _t(
+        'Afficher tous les $count avis',
+        ar: 'عرض كل $count تقييم',
+        en: 'Show all $count reviews',
       );
 
   // --- Feedback & Alerts ---
@@ -258,6 +335,26 @@ class AppLocalizations {
         'Erreur serveur. Veuillez réessayer ultérieurement.',
         ar: 'خطأ في الخادم. يرجى المحاولة لاحقاً.',
         en: 'Server error. Please try again later.',
+      );
+  String minNightsRequired(int n) => _t(
+        'Le séjour minimum est de $n nuits.',
+        ar: 'الحد الأدنى للإقامة هو $n ليالي.',
+        en: 'Minimum stay is $n nights.',
+      );
+  String guestsExceedCapacity(int max) => _t(
+        'La capacité maximale est de $max voyageurs.',
+        ar: 'الطاقة الاستيعابية القصوى هي $max ضيوف.',
+        en: 'Maximum capacity is $max guests.',
+      );
+  String get cannotBookOwnProperty => _t(
+        'Vous êtes le propriétaire de ce bien. Vous ne pouvez pas le réserver.',
+        ar: 'أنت مالك هذا العقار. لا يمكنك حجزه.',
+        en: 'You are the owner of this property. You cannot book it.',
+      );
+  String get checkBookingInfoMsg => _t(
+        'Veuillez vérifier les informations de réservation.',
+        ar: 'يرجى مراجعة تفاصيل الحجز.',
+        en: 'Please check your booking details.',
       );
 }
 

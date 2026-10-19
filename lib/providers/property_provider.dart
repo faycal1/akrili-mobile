@@ -18,6 +18,7 @@ class PropertyFilterState {
   final String? checkIn;
   final String? checkOut;
   final String? type;
+  final String? rentalMode;
   final int? minPrice;
   final int? maxPrice;
 
@@ -31,6 +32,7 @@ class PropertyFilterState {
     this.checkIn,
     this.checkOut,
     this.type,
+    this.rentalMode,
     this.minPrice,
     this.maxPrice,
   });
@@ -41,6 +43,7 @@ class PropertyFilterState {
     if (wilayaId != null) count++;
     if (communeId != null) count++;
     if (type != null && type!.isNotEmpty && type != 'all') count++;
+    if (rentalMode != null && rentalMode!.isNotEmpty && rentalMode != 'all') count++;
     if (minPrice != null || maxPrice != null) count++;
     if (capacity != null && capacity! > 1) count++;
     return count;
@@ -59,11 +62,13 @@ class PropertyFilterState {
     String? checkIn,
     String? checkOut,
     String? type,
+    String? rentalMode,
     int? minPrice,
     int? maxPrice,
     bool clearWilaya = false,
     bool clearCommune = false,
     bool clearType = false,
+    bool clearRentalMode = false,
     bool clearPrice = false,
     bool clearCapacity = false,
   }) {
@@ -77,6 +82,7 @@ class PropertyFilterState {
       checkIn: checkIn ?? this.checkIn,
       checkOut: checkOut ?? this.checkOut,
       type: clearType ? null : (type ?? this.type),
+      rentalMode: clearRentalMode ? null : (rentalMode ?? this.rentalMode),
       minPrice: clearPrice ? null : (minPrice ?? this.minPrice),
       maxPrice: clearPrice ? null : (maxPrice ?? this.maxPrice),
     );
@@ -153,6 +159,7 @@ class PropertiesFeedNotifier extends StateNotifier<PropertiesFeedState> {
         checkIn: filter.checkIn,
         checkOut: filter.checkOut,
         type: filter.type,
+        rentalMode: filter.rentalMode,
         minPrice: filter.minPrice,
         maxPrice: filter.maxPrice,
         page: 1,
@@ -188,6 +195,7 @@ class PropertiesFeedNotifier extends StateNotifier<PropertiesFeedState> {
         checkIn: filter.checkIn,
         checkOut: filter.checkOut,
         type: filter.type,
+        rentalMode: filter.rentalMode,
         minPrice: filter.minPrice,
         maxPrice: filter.maxPrice,
         page: nextPage,
@@ -241,6 +249,7 @@ final propertiesListProvider = FutureProvider.autoDispose<List<PropertyModel>>((
     checkIn: filter.checkIn,
     checkOut: filter.checkOut,
     type: filter.type,
+    rentalMode: filter.rentalMode,
     minPrice: filter.minPrice,
     maxPrice: filter.maxPrice,
   );
