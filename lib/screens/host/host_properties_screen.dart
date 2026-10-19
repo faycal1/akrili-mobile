@@ -286,6 +286,14 @@ class _HostPropertyCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            // Draft/rejected listings open the editor (the only statuses the
+            // backend allows editing); others open the public detail view.
+            final editable = property.status.toLowerCase() == 'draft' ||
+                property.status.toLowerCase() == 'rejected';
+            if (editable) {
+              context.push('/host/properties/${property.id}/edit');
+              return;
+            }
             context.push('/properties/${property.id}');
           },
           child: Padding(

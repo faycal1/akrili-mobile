@@ -149,6 +149,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/host/properties/new',
         builder: (context, state) => const PropertyCreateWizardScreen(),
       ),
+      GoRoute(
+        path: '/host/properties/:id/edit',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+          return PropertyCreateWizardScreen(propertyId: id);
+        },
+      ),
 
       // Detail and Action routes
       GoRoute(

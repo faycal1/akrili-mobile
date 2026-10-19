@@ -70,6 +70,21 @@ class AmenityModel {
   }
 }
 
+class PropertyPhoto {
+  final int id;
+  final String url;
+
+  PropertyPhoto({required this.id, required this.url});
+
+  factory PropertyPhoto.fromJson(Map<String, dynamic> json) {
+    final rawUrl = json['url']?.toString() ?? '';
+    return PropertyPhoto(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      url: ApiClient.resolveUrl(rawUrl) ?? rawUrl,
+    );
+  }
+}
+
 class PropertyModel {
   final int id;
   final String title;
@@ -93,6 +108,11 @@ class PropertyModel {
   final WilayaModel? wilaya;
   final CommuneModel? commune;
   final List<AmenityModel> amenities;
+  final List<int> houseRuleIds;
+  final Map<String, String> titleTranslations;
+  final Map<String, String> descriptionTranslations;
+  final int? coverMediaId;
+  final List<PropertyPhoto> galleryPhotos;
   final UserModel? owner;
   final double? averageRating;
   final int reviewsCount;
@@ -125,6 +145,11 @@ class PropertyModel {
     this.wilaya,
     this.commune,
     required this.amenities,
+    this.houseRuleIds = const [],
+    this.titleTranslations = const {},
+    this.descriptionTranslations = const {},
+    this.coverMediaId,
+    this.galleryPhotos = const [],
     this.owner,
     this.averageRating,
     required this.reviewsCount,
@@ -162,6 +187,39 @@ class PropertyModel {
             ?.map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
+
+    // Full locale maps (from detail endpoint) so edit flows don't wipe
+    // translations the UI didn't display. Falls back to the resolved value.
+    Map<String, String> parseLocaleMap(dynamic raw, String fallback) {
+      final out = <String, String>{};
+      if (raw is Map) {
+        raw.forEach((k, v) {
+          if (v != null && v.toString().isNotEmpty) {
+            out[k.toString()] = v.toString();
+          }
+        });
+      }
+      if (out.isEmpty && fallback.isNotEmpty) {
+        out['fr'] = fallback;
+      }
+      return out;
+    }
+
+    final titleTranslations =
+        parseLocaleMap(json['title_translations'] ?? rawTitle, resolvedTitle);
+    final descriptionTranslations =
+        parseLocaleMap(json['description_translations'] ?? rawDesc, resolvedDesc ?? '');
+
+    final houseRuleIds = (json['house_rules'] as List<dynamic>?)
+            ?.map((e) => (e is Map ? e['id'] : null) as int?)
+            .whereType<int>()
+            .toList() ??
+        <int>[];
+
+    final galleryPhotos = (json['gallery_media'] as List<dynamic>?)
+            ?.map((e) => PropertyPhoto.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        <PropertyPhoto>[];
 
     final Map<int, int> parsedDistribution = {};
     if (json['rating_distribution'] is Map) {
@@ -210,6 +268,11 @@ class PropertyModel {
               ?.map((e) => AmenityModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      houseRuleIds: houseRuleIds,
+      titleTranslations: titleTranslations,
+      descriptionTranslations: descriptionTranslations,
+      coverMediaId: json['cover_media_id'] as int?,
+      galleryPhotos: galleryPhotos,
       owner: json['owner'] != null && json['owner'] is Map<String, dynamic>
           ? UserModel.fromJson(json['owner'] as Map<String, dynamic>)
           : null,

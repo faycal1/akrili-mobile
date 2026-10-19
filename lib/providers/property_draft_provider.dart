@@ -58,6 +58,17 @@ class PropertyDraftState {
   final String? errorMessage;
   final PropertyModel? createdProperty;
 
+  // Edit mode: id of the property being edited (null = creating a new one),
+  // and whether it already has a cover so step 5 doesn't force a re-upload.
+  final int? editingPropertyId;
+  final bool hasExistingCover;
+
+  // Existing (already-uploaded) media shown during edit, with ids so the
+  // owner can delete a specific photo server-side.
+  final String? existingCoverUrl;
+  final int? existingCoverId;
+  final List<PropertyPhoto> existingGallery;
+
   const PropertyDraftState({
     this.currentStep = 0,
     this.type = 'apartment',
@@ -90,13 +101,20 @@ class PropertyDraftState {
     this.uploadProgress = 0.0,
     this.errorMessage,
     this.createdProperty,
+    this.editingPropertyId,
+    this.hasExistingCover = false,
+    this.existingCoverUrl,
+    this.existingCoverId,
+    this.existingGallery = const [],
   });
+
+  bool get isEditing => editingPropertyId != null;
 
   bool get isStep1Valid => titleFr.trim().isNotEmpty && type.isNotEmpty;
   bool get isStep2Valid => wilayaId != null && communeId != null;
   bool get isStep3Valid => capacity >= 1 && bedrooms >= 0 && bathrooms >= 0 && rentalMode.isNotEmpty;
   bool get isStep4Valid => (nightlyPrice != null && nightlyPrice! >= 0) && minNights >= 1;
-  bool get isStep5Valid => cover != null;
+  bool get isStep5Valid => cover != null || hasExistingCover;
 
   bool isStepValid(int step) {
     switch (step) {
@@ -153,6 +171,12 @@ class PropertyDraftState {
     String? errorMessage,
     bool clearError = false,
     PropertyModel? createdProperty,
+    int? editingPropertyId,
+    bool? hasExistingCover,
+    String? existingCoverUrl,
+    bool clearExistingCover = false,
+    int? existingCoverId,
+    List<PropertyPhoto>? existingGallery,
   }) {
     return PropertyDraftState(
       currentStep: currentStep ?? this.currentStep,
@@ -186,6 +210,11 @@ class PropertyDraftState {
       uploadProgress: uploadProgress ?? this.uploadProgress,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       createdProperty: createdProperty ?? this.createdProperty,
+      editingPropertyId: editingPropertyId ?? this.editingPropertyId,
+      hasExistingCover: hasExistingCover ?? this.hasExistingCover,
+      existingCoverUrl: clearExistingCover ? null : (existingCoverUrl ?? this.existingCoverUrl),
+      existingCoverId: clearExistingCover ? null : (existingCoverId ?? this.existingCoverId),
+      existingGallery: existingGallery ?? this.existingGallery,
     );
   }
 }
@@ -200,6 +229,66 @@ class PropertyDraftNotifier extends StateNotifier<PropertyDraftState> {
     if (step >= 0 && step <= 5) {
       state = state.copyWith(currentStep: step);
     }
+  }
+
+  /// Prefill the draft from an existing property for editing. Keeps every
+  /// locale and house rule so saving does not erase data the form didn't show.
+  void loadForEdit(PropertyModel p) {
+    state = PropertyDraftState(
+      currentStep: 0,
+      type: p.type,
+      titleFr: p.titleTranslations['fr'] ?? p.title,
+      titleAr: p.titleTranslations['ar'] ?? '',
+      titleEn: p.titleTranslations['en'] ?? '',
+      descriptionFr: p.descriptionTranslations['fr'] ?? (p.description ?? ''),
+      descriptionAr: p.descriptionTranslations['ar'] ?? '',
+      descriptionEn: p.descriptionTranslations['en'] ?? '',
+      wilayaId: p.wilaya?.id,
+      wilayaName: p.wilaya?.name,
+      communeId: p.commune?.id,
+      communeName: p.commune?.name,
+      address: p.address ?? '',
+      latitude: p.latitude,
+      longitude: p.longitude,
+      capacity: p.capacity,
+      bedrooms: p.bedrooms,
+      bathrooms: p.bathrooms,
+      rentalMode: p.rentalMode ?? 'seasonal',
+      amenityIds: p.amenities.map((a) => a.id).toSet(),
+      houseRuleIds: p.houseRuleIds.toSet(),
+      nightlyPrice: p.nightlyPrice,
+      minNights: p.minNights,
+      cleaningFee: p.cleaningFee,
+      deposit: p.deposit,
+      editingPropertyId: p.id,
+      hasExistingCover: p.coverUrl != null && p.coverUrl!.isNotEmpty,
+      existingCoverUrl: p.coverUrl,
+      existingCoverId: p.coverMediaId,
+      existingGallery: p.galleryPhotos,
+    );
+  }
+
+  /// Delete an already-uploaded gallery photo on the server and drop it locally.
+  Future<void> removeExistingGalleryPhoto(int mediaId) async {
+    final id = state.editingPropertyId;
+    if (id == null) {
+      return;
+    }
+    await _repository.deleteHostPropertyMedia(id, mediaId);
+    state = state.copyWith(
+      existingGallery: state.existingGallery.where((p) => p.id != mediaId).toList(),
+    );
+  }
+
+  /// Delete the existing cover on the server; step 5 then requires a new one.
+  Future<void> removeExistingCover() async {
+    final id = state.editingPropertyId;
+    final coverId = state.existingCoverId;
+    if (id == null || coverId == null) {
+      return;
+    }
+    await _repository.deleteHostPropertyMedia(id, coverId);
+    state = state.copyWith(clearExistingCover: true, hasExistingCover: false);
   }
 
   void nextStep() {
@@ -349,7 +438,7 @@ class PropertyDraftNotifier extends StateNotifier<PropertyDraftState> {
     }
 
     try {
-      // 1. Create draft
+      // 1. Create a new draft, or update the existing one when editing.
       state = state.copyWith(
         submitStage: SubmitStage.creatingDraft,
         uploadProgress: 0.1,
@@ -387,9 +476,12 @@ class PropertyDraftNotifier extends StateNotifier<PropertyDraftState> {
         },
       };
 
-      final createdDraft = await _repository.createHostProperty(payload);
+      final PropertyModel saved = state.isEditing
+          ? await _repository.updateHostProperty(state.editingPropertyId!, payload)
+          : await _repository.createHostProperty(payload);
 
-      // 2. Upload media if available
+      // 2. Upload media if the user picked any. On edit, existing photos are
+      // kept; a new cover replaces the old one and new gallery items append.
       if (state.cover != null || state.gallery.isNotEmpty) {
         state = state.copyWith(
           submitStage: SubmitStage.uploadingPhotos,
@@ -397,7 +489,7 @@ class PropertyDraftNotifier extends StateNotifier<PropertyDraftState> {
         );
 
         await _repository.uploadHostPropertyMedia(
-          createdDraft.id,
+          saved.id,
           cover: state.cover,
           gallery: state.gallery,
           onSendProgress: (sent, total) {
@@ -409,16 +501,17 @@ class PropertyDraftNotifier extends StateNotifier<PropertyDraftState> {
         );
       }
 
-      // 3. Submit for moderation review (draft -> pending)
+      // 3. Submit for moderation review (draft/rejected -> pending)
       state = state.copyWith(
         submitStage: SubmitStage.submittingForReview,
         uploadProgress: 0.85,
       );
 
-      final finalProperty = await _repository.submitHostProperty(createdDraft.id);
+      final finalProperty = await _repository.submitHostProperty(saved.id);
 
-      // Refresh host properties feed
+      // Refresh host feed and the edited property's detail.
       _ref.invalidate(hostPropertiesProvider);
+      _ref.invalidate(propertyDetailProvider(saved.id));
 
       state = state.copyWith(
         submitStage: SubmitStage.completed,

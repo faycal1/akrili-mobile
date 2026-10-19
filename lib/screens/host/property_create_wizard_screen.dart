@@ -11,7 +11,11 @@ import '../../providers/property_draft_provider.dart';
 import '../../providers/property_provider.dart';
 
 class PropertyCreateWizardScreen extends ConsumerStatefulWidget {
-  const PropertyCreateWizardScreen({super.key});
+  /// When set, the wizard edits an existing (draft/rejected) property
+  /// instead of creating a new one.
+  final int? propertyId;
+
+  const PropertyCreateWizardScreen({super.key, this.propertyId});
 
   @override
   ConsumerState<PropertyCreateWizardScreen> createState() =>
@@ -21,6 +25,28 @@ class PropertyCreateWizardScreen extends ConsumerStatefulWidget {
 class _PropertyCreateWizardScreenState
     extends ConsumerState<PropertyCreateWizardScreen> {
   final ImagePicker _picker = ImagePicker();
+  bool _loadingExisting = false;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.propertyId != null) {
+      _loadingExisting = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          final property = await ref
+              .read(propertyRepositoryProvider)
+              .getProperty(widget.propertyId!);
+          ref.read(propertyDraftProvider.notifier).loadForEdit(property);
+        } catch (e) {
+          _loadError = e.toString().replaceFirst('Exception: ', '');
+        } finally {
+          if (mounted) setState(() => _loadingExisting = false);
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +55,22 @@ class _PropertyCreateWizardScreenState
     final notifier = ref.read(propertyDraftProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // While loading an existing property for editing, show a spinner.
+    if (_loadingExisting) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_loadError != null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(_loadError!, textAlign: TextAlign.center),
+          ),
+        ),
+      );
+    }
+
     // If successfully submitted, show the completed pending state screen
     if (draft.submitStage == SubmitStage.completed) {
       return _buildSuccessScreen(context, tr, draft);
@@ -36,7 +78,7 @@ class _PropertyCreateWizardScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(tr.listYourProperty),
+        title: Text(draft.isEditing ? tr.editProperty : tr.listYourProperty),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () {
@@ -820,7 +862,60 @@ class _PropertyCreateWizardScreenState
         const SizedBox(height: 12),
 
         // Cover Picker / Preview
-        if (draft.cover == null)
+        if (draft.cover == null && draft.existingCoverUrl != null)
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(
+                  draft.existingCoverUrl!,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (c, e, s) => Container(
+                    height: 200,
+                    color: isDark ? Colors.grey[900] : Colors.grey[100],
+                    child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 10,
+                right: 10,
+                child: CircleAvatar(
+                  backgroundColor: Colors.black.withOpacity(0.65),
+                  child: IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+                    onPressed: () => _deleteExistingCover(context, tr, notifier),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 10,
+                left: 10,
+                child: TextButton.icon(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.black.withOpacity(0.7),
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                  label: Text(tr.edit),
+                  onPressed: () async {
+                    final photo = await _picker.pickImage(
+                      source: ImageSource.gallery,
+                      maxWidth: 1920,
+                      maxHeight: 1440,
+                      imageQuality: 85,
+                    );
+                    if (photo != null) {
+                      notifier.setCoverPhoto(photo);
+                    }
+                  },
+                ),
+              ),
+            ],
+          )
+        else if (draft.cover == null)
           InkWell(
             onTap: () async {
               final photo = await _picker.pickImage(
@@ -904,7 +999,7 @@ class _PropertyCreateWizardScreenState
 
         const SizedBox(height: 28),
         _buildSectionHeader(
-          title: '${tr.galleryPhotosLabel} (${draft.gallery.length}/20)',
+          title: '${tr.galleryPhotosLabel} (${draft.existingGallery.length + draft.gallery.length}/20)',
           subtitle: tr.galleryPhotosHint,
         ),
         const SizedBox(height: 12),
@@ -914,6 +1009,43 @@ class _PropertyCreateWizardScreenState
           spacing: 10,
           runSpacing: 10,
           children: [
+            // Already-uploaded photos (edit mode): delete removes them server-side.
+            ...draft.existingGallery.map((photo) {
+              return Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.network(
+                      photo.url,
+                      width: 95,
+                      height: 95,
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => Container(
+                        width: 95,
+                        height: 95,
+                        color: isDark ? Colors.grey[900] : Colors.grey[100],
+                        child: const Icon(Icons.broken_image_outlined, size: 18, color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: GestureDetector(
+                      onTap: () => _deleteExistingGalleryPhoto(context, tr, notifier, photo.id),
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
             ...draft.gallery.asMap().entries.map((entry) {
               final idx = entry.key;
               final file = entry.value;
@@ -949,7 +1081,7 @@ class _PropertyCreateWizardScreenState
             }),
 
             // Add more photos button
-            if (draft.gallery.length < 20)
+            if (draft.existingGallery.length + draft.gallery.length < 20)
               InkWell(
                 onTap: () async {
                   final photos = await _picker.pickMultiImage(
@@ -1375,7 +1507,9 @@ class _PropertyCreateWizardScreenState
                       ),
                     )
                   : Text(
-                      isLastStep ? tr.submitForReviewBtn : tr.nextStepBtn,
+                      isLastStep
+                          ? (draft.isEditing ? tr.saveChanges : tr.submitForReviewBtn)
+                          : tr.nextStepBtn,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
             ),
@@ -1399,6 +1533,69 @@ class _PropertyCreateWizardScreenState
           style: const TextStyle(fontSize: 13, color: Colors.grey),
         ),
       ],
+    );
+  }
+
+  /// Deletes the already-uploaded cover photo server-side (edit mode).
+  Future<void> _deleteExistingCover(
+    BuildContext context,
+    AppLocalizations tr,
+    PropertyDraftNotifier notifier,
+  ) async {
+    final confirmed = await _confirmPhotoDelete(context, tr);
+    if (confirmed != true) {
+      return;
+    }
+    try {
+      await notifier.removeExistingCover();
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.serverErrorMsg)),
+        );
+      }
+    }
+  }
+
+  /// Deletes a specific already-uploaded gallery photo server-side (edit mode).
+  Future<void> _deleteExistingGalleryPhoto(
+    BuildContext context,
+    AppLocalizations tr,
+    PropertyDraftNotifier notifier,
+    int mediaId,
+  ) async {
+    final confirmed = await _confirmPhotoDelete(context, tr);
+    if (confirmed != true) {
+      return;
+    }
+    try {
+      await notifier.removeExistingGalleryPhoto(mediaId);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.serverErrorMsg)),
+        );
+      }
+    }
+  }
+
+  /// Confirmation dialog shared by the existing-photo delete actions.
+  Future<bool?> _confirmPhotoDelete(BuildContext context, AppLocalizations tr) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: Text(tr.deletePhotoConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(tr.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(tr.delete, style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 

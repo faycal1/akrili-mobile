@@ -54,7 +54,15 @@ class AppLocalizations {
   String get close => _t('Fermer', ar: 'إغلاق', en: 'Close');
   String get retry => _t('Réessayer', ar: 'إعادة المحاولة', en: 'Retry');
   String get edit => _t('Modifier', ar: 'تعديل', en: 'Edit');
+  String get editProperty => _t("Modifier l'annonce", ar: 'تعديل الإعلان', en: 'Edit listing');
+  String get saveChanges => _t('Enregistrer les modifications', ar: 'حفظ التعديلات', en: 'Save changes');
+  String get currentPhotos => _t('Photos actuelles', ar: 'الصور الحالية', en: 'Current photos');
   String get delete => _t('Supprimer', ar: 'حذف', en: 'Delete');
+  String get deletePhotoConfirm => _t(
+        'Supprimer cette photo ?',
+        ar: 'هل تريد حذف هذه الصورة؟',
+        en: 'Delete this photo?',
+      );
   String get search => _t('Rechercher', ar: 'بحث', en: 'Search');
   String get seeAll => _t('Voir tout', ar: 'عرض الكل', en: 'See All');
   String get viewDetails => _t('Voir les détails', ar: 'عرض التفاصيل', en: 'View Details');
