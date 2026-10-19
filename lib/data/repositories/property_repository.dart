@@ -101,27 +101,26 @@ class PropertyRepository {
     List<XFile>? gallery,
     void Function(int sent, int total)? onSendProgress,
   }) async {
-    final map = <String, dynamic>{};
+    final formData = FormData();
 
     if (cover != null) {
-      map['cover'] = await MultipartFile.fromFile(
-        cover.path,
-        filename: cover.name,
-      );
+      formData.files.add(MapEntry(
+        'cover',
+        await MultipartFile.fromFile(cover.path, filename: cover.name),
+      ));
     }
 
     if (gallery != null && gallery.isNotEmpty) {
-      final galleryFiles = <MultipartFile>[];
       for (final file in gallery) {
-        galleryFiles.add(await MultipartFile.fromFile(
-          file.path,
-          filename: file.name,
+        // Use the "gallery[]" key so PHP parses repeated fields as an array;
+        // a plain "gallery" key would collapse to the last file and fail the
+        // backend's `array` validation rule.
+        formData.files.add(MapEntry(
+          'gallery[]',
+          await MultipartFile.fromFile(file.path, filename: file.name),
         ));
       }
-      map['gallery'] = galleryFiles;
     }
-
-    final formData = FormData.fromMap(map);
 
     final response = await _client.dio.post(
       ApiEndpoints.hostPropertyMedia(propertyId),
